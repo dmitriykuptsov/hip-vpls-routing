@@ -28,7 +28,28 @@ from time import sleep
 from config import config
 # Main router functionality
 from demultiplexer.demux import Demultiplexer
+# HIP Server
+import crypto_server
 
+demux = None
+cs = None
+def completed_callback(cipher, hmac, cipher_key, hmac_key, src, dst):
+    global demux
+    if demux:
+        demux.set_key(src, dst, hmac_key)
+
+def closed_callback(ihit, rhit, src, dst):
+    global demux
+    global cs
+    if demux:
+        demux.clear_key(src, dst)
+    if cs:
+        cs.trigger_bex(ihit, rhit, src, dst)
+
+# Host Identity Protocol crypto server
+# Performs BEX and derives the keys to secure 
+# The dataplane
+cs = crypto_server.CryptoServer(completed_callback, closed_callback)
 demux = Demultiplexer(config["interfaces"], config["own_ip"], auth=config["enable_auth"])
 
 while True:

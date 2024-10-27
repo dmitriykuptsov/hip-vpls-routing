@@ -27,6 +27,9 @@ from utils.misc import Misc
 # Crypto
 from crypto.digest import SHA256HMAC
 
+SHA256_HMAC_LENGTH = 32
+ETHER_HEADER_LENGTH = 14
+
 class Demultiplexer():
 
     def __init__(self, public_ip, private_ip, hub_ip, key = None, auth=False):
@@ -34,7 +37,7 @@ class Demultiplexer():
         self.private_ip = private_ip
         self.hub_ip = hub_ip
         self.auth = auth
-        self.key = bytearray(key.encode("ascii"))
+        self.key = None #bytearray(key.encode("ascii"))
 
         demux_tun = tun.Tun(address="192.168.1.2", mtu=1500, name="r1-tun1");
         self.socket_public = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.IPPROTO_IP)
@@ -50,14 +53,23 @@ class Demultiplexer():
         thread = threading.Thread(target=self.read_from_private, args=(self.socket_raw, demux_tun, self.public_ip, self.hub_ip), daemon=True)
         thread.start()
     
+
+    def set_key(self, key):
+        self.key = key
+
+    def clear_key(self):
+        self.key = None
+
     def read_from_public(self, pubfd, privfd, private_ip, mtu=1500):
         while True:
             try:
                 buf = pubfd.recv(mtu)
                 if self.auth:
-                    outer = IPv4.IPv4Packet(buf[14:-32])
+                    if not self.key:
+                        continue
+                    outer = IPv4.IPv4Packet(buf[ETHER_HEADER_LENGTH:-SHA256_HMAC_LENGTH])
                 else:
-                    outer = IPv4.IPv4Packet(buf[14:])
+                    outer = IPv4.IPv4Packet(buf[ETHER_HEADER_LENGTH:])
                 destination = outer.get_destination_address()
                 if Misc.bytes_to_ipv4_string(destination) != self.public_ip:
                     continue
@@ -86,7 +98,9 @@ class Demultiplexer():
                 packet.set_payload(inner.get_buffer())
                 packet.set_ihl(5)
                 packet.set_total_length(len(packet.get_buffer()))
-                if self.auth:                   
+                if self.auth:
+                    if not self.key:
+                        continue            
                     sha256 = SHA256HMAC(self.key)
                     hmac = sha256.digest(packet.get_payload())
                     pubfd.sendto(packet.get_buffer() + hmac, (hub_ip, 0))

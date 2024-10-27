@@ -28,6 +28,9 @@ from utils.misc import Misc
 # Crypto
 from crypto.digest import SHA256HMAC
 
+SHA256_HMAC_LENGTH = 32
+ETHER_HEADER_LENGTH = 14
+
 class Demultiplexer():
 
     def __init__(self, interfaces, own_ip, auth=True):
@@ -43,7 +46,7 @@ class Demultiplexer():
         self.socket_raw.bind((own_ip, 0))
         self.socket_raw.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1);
         for interface in self.interfaces:
-            self.keys[interface["destination"]] = bytearray(interface["auth_key"].encode("ascii"))
+            #self.keys[interface["destination"]] = bytearray(interface["auth_key"].encode("ascii"))
             demux_tun = tun.Tun(address=interface["address"], mtu=interface["mtu"], name=interface["name"]);
             network = Misc.ipv4_address_to_int(interface["address"]) & Misc.ipv4_address_to_int(interface["mask"])
             self.demux_table[Misc.bytes_to_ipv4_string(Misc.int_to_ipv4_address(network))] = demux_tun;
@@ -52,16 +55,22 @@ class Demultiplexer():
 
         thread = threading.Thread(target=self.read_from_public, args=(self.socket, ), daemon=True)
         thread.start()
-        
+
+    def set_key(self, src, dst, key):
+        self.keys[Misc.bytes_to_ipv4_string(dst)] = key
+
+    def clear_key(self, src, dst):
+        del self.keys[Misc.bytes_to_ipv4_string(dst)]
 
     def read_from_public(self, sockfd, mtu = 1500):
         while True:
             try:
                 buf = sockfd.recv(mtu)
                 if self.auth:
-                    outer = IPv4.IPv4Packet(bytearray(buf[14:-32]))
+                    outer = IPv4.IPv4Packet(bytearray(buf[ETHER_HEADER_LENGTH:-SHA256_HMAC_LENGTH]))
                 else:
-                    outer = IPv4.IPv4Packet(bytearray(buf[14:]))
+                    outer = IPv4.IPv4Packet(bytearray(buf[ETHER_HEADER_LENGTH:]))
+
                 source = outer.get_source_address()
                 destination = outer.get_destination_address()
 
@@ -69,7 +78,9 @@ class Demultiplexer():
                     continue
                 if self.auth:
                     icv = buf[-32:]
-                    key = self.keys[Misc.bytes_to_ipv4_string(source)]
+                    key = self.keys.get(Misc.bytes_to_ipv4_string(source), None)
+                    if not key:
+                        continue
                     sha256 = SHA256HMAC(key)
                     hmac = sha256.digest(outer.get_payload())
                     if icv != hmac:
@@ -99,7 +110,9 @@ class Demultiplexer():
                 outer.set_payload(inner.get_buffer())
                 outer.set_total_length(len(bytearray(outer.get_buffer())))
                 if self.auth:                    
-                    key = self.keys[destination]
+                    key = self.keys.get(destination, None)
+                    if not key:
+                        continue
                     sha256 = SHA256HMAC(key)
                     hmac = sha256.digest(outer.get_payload())
                     sockfd.sendto(outer.get_buffer() + hmac, (destination, 0))

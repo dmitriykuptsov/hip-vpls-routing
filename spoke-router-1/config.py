@@ -21,4 +21,6 @@ config = {
     "hub_ip": "1.1.1.2",
     "enable_auth": True,
     "auth_key": "RedCivFomcuvDicBagropZothEgyijKo",
+    "ihit": "2001:0021:efda:99ec:e872:153f:a818:3610",
+    "rhit": "2001:0021:b4b6:b7a4:f4cc:0f6b:8779:8ef9"
 }
