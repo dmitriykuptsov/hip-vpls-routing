@@ -124,7 +124,7 @@ def run():
     info( net[ 'r4' ].cmd( 'ip route add 192.168.3.0/24 dev r4-tun1' ) )
     info( net[ 'r4' ].cmd( 'ip route add 192.168.1.0/24 dev r4-tun2' ) )
     info( net[ 'r4' ].cmd( 'ip route add 192.168.2.0/24 dev r4-tun3' ) )
-
+    
     info( net[ 'r5' ].cmd( 'ip route add default dev r5-tun1' ) )
     info( net[ 'r1' ].cmd( 'ip route add default dev r1-tun1' ) )
     info( net[ 'r6' ].cmd( 'ip route add default dev r6-tun1' ) )

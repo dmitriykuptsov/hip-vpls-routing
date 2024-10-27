@@ -45,7 +45,7 @@ def completed_callback(cipher, hmac, cipher_key, hmac_key, src, dst):
     dst_str = Utils.ipv4_bytes_to_string(dst)
     if demux:
         logger.debug("src=%s, dst=%s, key=%s" % (src_str, dst_str, hexlify(hmac_key)))
-        demux.set_key(src_str, dst_str, hmac_key)
+        demux.set_key(src_str, dst_str, (cipher_key, hmac_key))
 
 def closed_callback(ihit, rhit, src, dst):
     global demux
