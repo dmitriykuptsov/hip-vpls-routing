@@ -57,10 +57,10 @@ class Demultiplexer():
         thread.start()
 
     def set_key(self, src, dst, key):
-        self.keys[Misc.bytes_to_ipv4_string(dst)] = key
+        self.keys[dst] = key
 
     def clear_key(self, src, dst):
-        del self.keys[Misc.bytes_to_ipv4_string(dst)]
+        del self.keys[dst]
 
     def read_from_public(self, sockfd, mtu = 1500):
         while True:

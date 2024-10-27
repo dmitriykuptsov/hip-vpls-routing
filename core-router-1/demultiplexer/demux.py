@@ -27,6 +27,10 @@ import traceback
 from utils.misc import Misc
 # Crypto
 from crypto.digest import SHA256HMAC
+# Logging....
+import logging
+logger = logging.getLogger("Demultiplexer")
+from binascii import unhexlify
 
 SHA256_HMAC_LENGTH = 32
 ETHER_HEADER_LENGTH = 14
@@ -57,10 +61,11 @@ class Demultiplexer():
         thread.start()
 
     def set_key(self, src, dst, key):
-        self.keys[Misc.bytes_to_ipv4_string(dst)] = key
+        logger.debug("Setting key for the destination %s " % dst)
+        self.keys[dst] = key
 
     def clear_key(self, src, dst):
-        del self.keys[Misc.bytes_to_ipv4_string(dst)]
+        del self.keys[dst]
 
     def read_from_public(self, sockfd, mtu = 1500):
         while True:
@@ -80,10 +85,12 @@ class Demultiplexer():
                     icv = buf[-32:]
                     key = self.keys.get(Misc.bytes_to_ipv4_string(source), None)
                     if not key:
+                        logger.critical("No key was found read_from_public... %s " % Misc.bytes_to_ipv4_string(source))
                         continue
                     sha256 = SHA256HMAC(key)
                     hmac = sha256.digest(outer.get_payload())
                     if icv != hmac:
+                        logger.critical("Invalid ICV... %s " % unhexlify(key))
                         continue
                 inner = IPv4.IPv4Packet(outer.get_payload())
                 source = inner.get_source_address()
@@ -112,6 +119,7 @@ class Demultiplexer():
                 if self.auth:                    
                     key = self.keys.get(destination, None)
                     if not key:
+                        logger.critical("No key was found... %s " % destination)
                         continue
                     sha256 = SHA256HMAC(key)
                     hmac = sha256.digest(outer.get_payload())

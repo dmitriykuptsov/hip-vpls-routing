@@ -30,27 +30,44 @@ from config import config
 from demultiplexer.demux import Demultiplexer
 # HIP Server
 import crypto_server
+from hiplib.utils.misc import Utils
+# Logging....
+import logging
+logger = logging.getLogger("router")
+# Hexidecimal utlis
+from binascii import hexlify
 
 demux = None
 cs = None
 def completed_callback(cipher, hmac, cipher_key, hmac_key, src, dst):
     global demux
+    src_str = Utils.ipv4_bytes_to_string(src)
+    dst_str = Utils.ipv4_bytes_to_string(dst)
     if demux:
-        demux.set_key(src, dst, hmac_key)
+        logger.debug("src=%s, dst=%s, key=%s" % (src_str, dst_str, hexlify(hmac_key)))
+        demux.set_key(src_str, dst_str, hmac_key)
 
 def closed_callback(ihit, rhit, src, dst):
     global demux
     global cs
+    src_str = Utils.ipv4_bytes_to_string(src)
+    dst_str = Utils.ipv4_bytes_to_string(dst)
     if demux:
-        demux.clear_key(src, dst)
+        demux.clear_key(src_str, dst_str)
     if cs:
-        cs.trigger_bex(ihit, rhit, src, dst)
+        cs.trigger_bex(ihit, rhit, src_str, dst_str)
 
 # Host Identity Protocol crypto server
 # Performs BEX and derives the keys to secure 
 # The dataplane
 cs = crypto_server.CryptoServer(completed_callback, closed_callback)
 demux = Demultiplexer(config["interfaces"], config["own_ip"], auth=config["enable_auth"])
+
+for peer in config["hip"]:
+    cs.trigger_bex(Utils.hex_formatted_to_ipv6_bytes(peer["ihit"]), 
+                   Utils.hex_formatted_to_ipv6_bytes(peer["rhit"]), 
+                   peer["src"], 
+                   peer["dst"])
 
 while True:
     print("Periodic task....")

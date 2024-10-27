@@ -258,6 +258,10 @@ class Utils():
 		return formatted.rstrip(":");
 
 	@staticmethod
+	def hex_formatted_to_ipv6_bytes(address):
+		return unhexlify(address.replace(":", ""))
+	
+	@staticmethod
 	def ipv6_bytes_to_hex_formatted(address_bytes):
 		"""
 		Converts IPv6 bytes to a formatted string

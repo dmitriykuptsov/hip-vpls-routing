@@ -26,6 +26,10 @@ import socket
 from utils.misc import Misc
 # Crypto
 from crypto.digest import SHA256HMAC
+# Logging....
+import logging
+logger = logging.getLogger("router")
+from binascii import unhexlify
 
 SHA256_HMAC_LENGTH = 32
 ETHER_HEADER_LENGTH = 14
@@ -79,6 +83,7 @@ class Demultiplexer():
                     hmac = sha256.digest(outer.get_payload())
                     if icv != hmac:
                         print(Misc.bytes_to_ipv4_string(outer.get_source_address()))
+                        logger.debug("Invalid ICV.... destination=%s key=%s" % (Misc.bytes_to_ipv4_string(destination), unhexlify(self.key)))
                         continue
                 inner = outer.get_payload()
                 privfd.write(inner)
@@ -100,6 +105,7 @@ class Demultiplexer():
                 packet.set_total_length(len(packet.get_buffer()))
                 if self.auth:
                     if not self.key:
+                        logger.critical("No key was found....")
                         continue            
                     sha256 = SHA256HMAC(self.key)
                     hmac = sha256.digest(packet.get_payload())

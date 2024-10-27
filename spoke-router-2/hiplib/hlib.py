@@ -1725,7 +1725,7 @@ class HIPLib():
                 logging.debug(hexlify(ihit))
                 logging.debug(hexlify(rhit))
                 
-                self.completed_callback(cipher.ALG_ID, hmac.ALG_ID, cipher_key, hmac_key, src, dst)
+                self.completed_callback(cipher.ALG_ID, hmac.ALG_ID, cipher_key, hmac_key, dst, src)
 
                 #sa_record = SA.SecurityAssociationRecord(cipher.ALG_ID, hmac.ALG_ID, cipher_key, hmac_key, dst, src);
                 #sa_record.set_spi(responders_spi);
@@ -2445,6 +2445,7 @@ class HIPLib():
                     Utils.ipv6_bytes_to_hex_formatted(sv.rhit));
             if hip_state.is_established():
                 if time.time() >= sv.data_timeout:
+                    continue
                     keymat = self.keymat_storage.get(Utils.ipv6_bytes_to_hex_formatted(sv.ihit), 
                         Utils.ipv6_bytes_to_hex_formatted(sv.rhit));
                     logging.debug("Reponder's HIT %s " % (Utils.ipv6_bytes_to_hex_formatted(sv.rhit)))
