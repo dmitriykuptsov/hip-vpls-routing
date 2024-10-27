@@ -55,8 +55,10 @@ def closed_callback(ihit, rhit, src, dst):
     if demux:
         demux.clear_key()
     if cs:
-        cs.trigger_bex(ihit, rhit, src_str, dst_str)
-
+        cs.trigger_bex(Utils.hex_formatted_to_ipv6_bytes(ihit), 
+                       Utils.hex_formatted_to_ipv6_bytes(rhit), 
+                       src_str, dst_str)
+        
 # Host Identity Protocol crypto server
 # Performs BEX and derives the keys to secure 
 # The dataplane
