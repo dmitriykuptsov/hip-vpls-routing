@@ -53,11 +53,19 @@ def closed_callback(ihit, rhit, src, dst):
     src_str = Utils.ipv4_bytes_to_string(src)
     dst_str = Utils.ipv4_bytes_to_string(dst)
     if demux:
-        demux.clear_key(src_str, dst_str)
+        try:
+            demux.clear_key(src_str, dst_str)
+        except:
+            pass
     if cs:
-        cs.trigger_bex(Utils.hex_formatted_to_ipv6_bytes(ihit), 
-                       Utils.hex_formatted_to_ipv6_bytes(rhit), 
-                       src_str, dst_str)
+        try:
+            cs.trigger_bex(ihit, 
+                       rhit, 
+                       src_str, 
+                       dst_str)
+        except Exception as e:
+            logger.critical("Exception occured in triggering BEX")
+            logger.critical(e)
 
 # Host Identity Protocol crypto server
 # Performs BEX and derives the keys to secure 
