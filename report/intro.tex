@@ -1,0 +1,21 @@
+\section{Introduction}
+\label{section:introduction}
+
+Today many organizations are having multiple branch offices that are 
+geographically separated. Connecting these offices with secure 
+communication channels is a must. The number of offices can be a large
+number and, thus, scalability is another crucial requirement. 
+
+We consider a multipoint L3-VPN in this work. The routers which are 
+part of this VPN are arranged in such a manner (hub-and-spoke arrangement) 
+so that scalability requirement is fulfilled. To secure the network we 
+use Host Identity Protocol~\cite{gurtov:hip}. We consider that routers 
+perform so called base exchange to negotiate authentication key
+on hop-by-hop bases (a separate base exchange is performed between connected pairs of nodes). 
+Although, encryption is prerogative of the customers,
+packet authentication is performed in a hop-by-hop manner by the routers on 
+the path. To understand the performance  of the proposed architecture we
+compare two setups: one with hop-by-hop packet authentication and the 
+second without authentication header attached to the packets at every 
+hop in L3-VPN network. Finally, we perform brief analysis of various approaches
+for building VPLS networks. 

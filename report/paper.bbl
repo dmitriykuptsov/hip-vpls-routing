@@ -1,0 +1,22 @@
+\begin{thebibliography}{1}
+
+\bibitem{hipvpls}
+{HIP-based Virtual Private LAN Service (HIPLS}.
+\newblock https://datatracker.ietf.org/doc/draft-henderson-hip-vpls/.
+
+\bibitem{l3vpn}
+{{L3-VPN in Mininet}}.
+\newblock https://github.com/dmitriykuptsov/vpls-routing.
+
+\bibitem{gurtov:hip}
+A.~Gurtov.
+\newblock {\em Host Identity Protocol (HIP): Towards the Secure Mobile
+  Internet}.
+\newblock Wiley Publishing, 2008.
+
+\bibitem{Stinson:Cryptography}
+D.~Stinson.
+\newblock {\em Cryptography: Theory and Practice, Second Edition}.
+\newblock CRC/C\&H, 2nd edition, 2002.
+
+\end{thebibliography}
