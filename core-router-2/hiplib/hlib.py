@@ -137,6 +137,7 @@ class HIPLib():
         self.hip_state_machine = HIPState.StateMachine();
         self.keymat_storage    = HIPState.Storage();
         self.dh_storage        = {}
+        self.dh_storage_r      = {}
         self.dh_storage_I2     = HIPState.Storage();
         self.dh_storage_R1     = HIPState.Storage();
         self.j_storage         = HIPState.Storage();
@@ -316,7 +317,6 @@ class HIPLib():
                  
                 self.dh_storage[r1counter_param.get_counter()].save(Utils.ipv6_bytes_to_hex_formatted(ihit), 
                     Utils.ipv6_bytes_to_hex_formatted(rhit), dh);
-                
 
                 dh_param = HIP.DHParameter();
                 dh_param.set_group_id(selected_dh_group);
@@ -715,10 +715,10 @@ class HIPLib():
                 public_key_i = dh.generate_public_key();
                 public_key_r = dh.decode_public_key(dh_param.get_public_value());
                 shared_secret = dh.compute_shared_secret(public_key_r);
-                if not self.dh_storage.get(r1_counter_param.get_counter(), None):
-                    self.dh_storage[r1_counter_param.get_counter()] = HIPState.Storage()
-                self.dh_storage[r1_counter_param.get_counter()].save(Utils.ipv6_bytes_to_hex_formatted(ihit), 
-                    Utils.ipv6_bytes_to_hex_formatted(rhit), dh);
+                #if not self.dh_storage_r.get(r1_counter_param.get_counter(), None):
+                #    self.dh_storage_r[r1_counter_param.get_counter()] = HIPState.Storage()
+                #self.dh_storage_r[r1_counter_param.get_counter()].save(Utils.ipv6_bytes_to_hex_formatted(ihit), 
+                #    Utils.ipv6_bytes_to_hex_formatted(rhit), dh);
 
                 info = Utils.sort_hits(ihit, rhit);
                 salt = irandom + jrandom;
