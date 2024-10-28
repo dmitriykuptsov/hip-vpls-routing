@@ -26,5 +26,5 @@ git clone https://github.com/mininet/mininet.git
 sudo PYTHON=python3 mininet/util/install.sh -a
 
 # Running the VPLS emulated environment
-cd vpls-routing
+cd hip-vpls-routing
 sudo python3 l3-vpn-mn.py
