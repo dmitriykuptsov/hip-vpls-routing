@@ -21,9 +21,9 @@ killall ovs-testcontroller
 
 # Cloning the database
 git clone https://github.com/mininet/mininet.git
-cd mininet
-git tag  # list available versions
-git checkout -b mininet-2.3.0 2.3.0  # or whatever version you wish to install
+#cd mininet
+#git tag  # list available versions
+#git checkout -b mininet-2.3.0 2.3.0  # or whatever version you wish to install
 cd ..
 
 # Installing the mininet globally
