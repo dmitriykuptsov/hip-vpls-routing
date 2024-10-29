@@ -47,28 +47,25 @@ config = {
     "interfaces": [
         {
             "name": "r4-tun1",
-            "address": "192.168.3.103",
+            "address": "192.168.3.2",
             "mask": "255.255.255.0",
             "destination": "1.1.1.6",
-            "auth_key": "oyctIajifwobAbhefIrcEdNersAmKiWr",
             "mtu": 1400
         },
         {
 
             "name": "r4-tun2",
-            "address": "192.168.1.103",
+            "address": "192.168.1.2",
             "mask": "255.255.255.0",
             "destination": "1.1.1.2",
-            "auth_key": "OpEedsEgNovadrovvekawvekyoykAjin",
             "mtu": 1400
             
         }, 
         {
             "name": "r4-tun3",
-            "address": "192.168.2.103",
+            "address": "192.168.2.2",
             "mask": "255.255.255.0",
             "destination": "1.1.1.3",
-            "auth_key": "oyctIajifwobAbhefIrcEdNersAmKiWr",
             "mtu": 1400
         }
     ]

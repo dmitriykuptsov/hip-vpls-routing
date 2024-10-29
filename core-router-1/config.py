@@ -47,26 +47,23 @@ config = {
     "interfaces": [
         {
             "name": "r2-tun1",
-            "address": "192.168.1.101",
+            "address": "192.168.1.2",
             "mask": "255.255.255.0",
             "destination": "1.1.1.1",
-            "auth_key": "RedCivFomcuvDicBagropZothEgyijKo",
             "mtu": 1400
         },
         {
             "name": "r2-tun2",
-            "address": "192.168.2.101",
+            "address": "192.168.2.2",
             "mask": "255.255.255.0",
             "destination": "1.1.1.3",
-            "auth_key": "JajsegEuctikdydryojrockyotweajCa",
             "mtu": 1400
         },
         {
             "name": "r2-tun3",
-            "address": "192.168.3.101",
+            "address": "192.168.3.2",
             "mask": "255.255.255.0",
             "destination": "1.1.1.4",
-            "auth_key": "OpEedsEgNovadrovvekawvekyoykAjin",
             "mtu": 1400
         }
     ]

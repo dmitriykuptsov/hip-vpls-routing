@@ -22,7 +22,6 @@ config = {
     "public_interface": "r5-eth1",
     "private_interface": "r5-tun1",
     "enable_auth": True,
-    "auth_key": "PebyowtyutquicsetMypOybaxmiUnood",
     "ihit": "2001:0021:012c:ea2f:7f84:8bdc:fcbf:d22c",
     "rhit": "2001:0021:0093:cbad:9ab7:eed9:c596:af31"
 }

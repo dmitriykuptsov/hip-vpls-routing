@@ -111,6 +111,7 @@ class Demultiplexer():
                 source = inner.get_source_address()
                 destination = inner.get_destination_address()
                 network = Misc.ipv4_address_to_int(Misc.bytes_to_ipv4_string(destination)) & Misc.ipv4_address_to_int("255.255.255.0")
+                logging.debug(Misc.int_to_ipv4_address(network))
                 tun = self.demux_table[Misc.bytes_to_ipv4_string(Misc.int_to_ipv4_address(network))]
                 tun.write(inner.get_buffer())
             except Exception as e:

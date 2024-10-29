@@ -73,7 +73,6 @@ demux = Demultiplexer(config["public_ip"],
                       config["hub_ip"], 
                       config["public_interface"],
                       config["private_interface"],
-                      config["auth_key"], 
                       config["enable_auth"])
 
 cs.trigger_bex(Utils.hex_formatted_to_ipv6_bytes(config["ihit"]), 

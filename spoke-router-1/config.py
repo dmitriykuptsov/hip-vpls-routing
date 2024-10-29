@@ -22,7 +22,6 @@ config = {
     "public_interface": "r1-eth1",
     "private_interface": "r1-tun1",
     "enable_auth": True,
-    "auth_key": "RedCivFomcuvDicBagropZothEgyijKo",
     "ihit": "2001:0021:efda:99ec:e872:153f:a818:3610",
     "rhit": "2001:0021:b4b6:b7a4:f4cc:0f6b:8779:8ef9"
 }
