@@ -85,12 +85,6 @@ class HIPLib():
         self.on_closed = on_closed
 
         # HIP v2 https://tools.ietf.org/html/rfc7401#section-3
-        # Configure resolver
-        logging.info("Using hosts file to resolve HITS %s" % (self.config["resolver"]["hosts_file"]));
-        self.hit_resolver = resolver.HostsFileResolver(filename = self.config["resolver"]["hosts_file"]);
-
-        # Security association database
-        self.ip_sec_sa = SA.SecurityAssociationDatabase();
         # Domain identifier
         self.di = DIFactory.get(self.config["resolver"]["domain_identifier"]["type"], 
             bytearray(self.config["resolver"]["domain_identifier"]["value"], encoding="ascii"));
@@ -137,9 +131,6 @@ class HIPLib():
         self.hip_state_machine = HIPState.StateMachine();
         self.keymat_storage    = HIPState.Storage();
         self.dh_storage        = {}
-        self.dh_storage_r      = {}
-        self.dh_storage_I2     = HIPState.Storage();
-        self.dh_storage_R1     = HIPState.Storage();
         self.j_storage         = HIPState.Storage();
         self.i_storage         = HIPState.Storage();
         self.cipher_storage    = HIPState.Storage();
@@ -715,10 +706,6 @@ class HIPLib():
                 public_key_i = dh.generate_public_key();
                 public_key_r = dh.decode_public_key(dh_param.get_public_value());
                 shared_secret = dh.compute_shared_secret(public_key_r);
-                #if not self.dh_storage_r.get(r1_counter_param.get_counter(), None):
-                #    self.dh_storage_r[r1_counter_param.get_counter()] = HIPState.Storage()
-                #self.dh_storage_r[r1_counter_param.get_counter()].save(Utils.ipv6_bytes_to_hex_formatted(ihit), 
-                #    Utils.ipv6_bytes_to_hex_formatted(rhit), dh);
 
                 info = Utils.sort_hits(ihit, rhit);
                 salt = irandom + jrandom;
@@ -1346,6 +1333,7 @@ class HIPLib():
 
                 if not signature_alg.verify(signature_param.get_signature(), bytearray(buf)):
                     logging.critical("Invalid signature. Dropping the packet");
+                    return []
                 else:
                     logging.debug("Signature is correct");
 
@@ -1487,35 +1475,6 @@ class HIPLib():
                 logging.debug(hexlify(rhit))
 
                 self.completed_callback(cipher.ALG_ID, hmac.ALG_ID, cipher_key, hmac_key, src, dst)
-                
-                #sa_record = SA.SecurityAssociationRecord(cipher.ALG_ID, hmac.ALG_ID, cipher_key, hmac_key, src, dst);
-                #sa_record.set_spi(responders_spi);
-                #self.ip_sec_sa.add_record(Utils.ipv6_bytes_to_hex_formatted(rhit), 
-                #    Utils.ipv6_bytes_to_hex_formatted(ihit), sa_record);
-
-                
-                # IN DIRECTION (IHIT - sender, RHIT - OWN)
-                # If OWN HIT is smaller then we SHOULD use the first key 
-                # THen we should pass the larger (or own) HIT first
-                #(cipher_key, hmac_key) = Utils.get_keys_esp(
-                #    keymat,
-                #    keymat_index, 
-                #    hmac.ALG_ID, 
-                #    cipher.ALG_ID,
-                #    ihit, rhit);
-                
-
-                #logging.debug(" DERVIVING KEYS IN I2")
-                #logging.debug(hexlify(hmac_key))
-                #logging.debug(hexlify(cipher_key))
-
-                #logging.debug(hexlify(self.own_hit))
-                #logging.debug(hexlify(rhit))
-                #logging.debug(hexlify(ihit))
-
-                #sa_record = SA.SecurityAssociationRecord(cipher.ALG_ID, hmac.ALG_ID, cipher_key, hmac_key, rhit, ihit);
-                #sa_record.set_spi(initiators_spi);
-                #self.ip_sec_sa.add_record(dst_str, src_str, sa_record);
                 
                 if Utils.is_hit_smaller(rhit, ihit):
                     sv = self.state_variables.get(Utils.ipv6_bytes_to_hex_formatted(rhit),
@@ -1675,6 +1634,7 @@ class HIPLib():
                 
                 if not signature_alg.verify(signature_param.get_signature(), bytearray(buf)):
                     logging.critical("Invalid signature. Dropping the packet");
+                    return []
                 else:
                     logging.debug("Signature is correct");
 
@@ -1727,35 +1687,9 @@ class HIPLib():
                 
                 self.completed_callback(cipher.ALG_ID, hmac.ALG_ID, cipher_key, hmac_key, dst, src)
 
-                #sa_record = SA.SecurityAssociationRecord(cipher.ALG_ID, hmac.ALG_ID, cipher_key, hmac_key, dst, src);
-                #sa_record.set_spi(responders_spi);
-                
-                #self.ip_sec_sa.add_record(Utils.ipv6_bytes_to_hex_formatted(rhit), 
-                #    Utils.ipv6_bytes_to_hex_formatted(ihit), sa_record);
-                
-                # Outgoing SA (HITa, HITb)
-                # IN DIRECTION (IHIT - sender, RHIT - OWN)
-                
-                #(cipher_key, hmac_key) = Utils.get_keys_esp(
-                #    keymat, 
-                #    keymat_index, 
-                #    hmac.ALG_ID, 
-                #    cipher.ALG_ID, 
-                #    ihit, rhit);
-                
-                # If OWN HIT is smaller then we SHOULD use the first key 
-                # THen we should pass the larger (or own) HIT first
-                #logging.debug(" DERVIVING KEYS IN R2")
-                #logging.debug(hexlify(hmac_key))
-                #logging.debug(hexlify(cipher_key))
-
                 logging.debug(hexlify(self.own_hit))
                 logging.debug(hexlify(rhit))
                 logging.debug(hexlify(ihit))
-                
-                #sa_record = SA.SecurityAssociationRecord(cipher.ALG_ID, hmac.ALG_ID, cipher_key, hmac_key, rhit, ihit);
-                #sa_record.set_spi(responders_spi);
-                #self.ip_sec_sa.add_record(src_str, dst_str, sa_record);
 
                 # Transition to an Established state
                 hip_state.established();
@@ -2427,7 +2361,7 @@ class HIPLib():
                 #logging.debug("Unknown state reached.... %s " % (hip_state));
             return response;
         except Exception as e:
-            logging.critical("Exception occured while processing packet from TUN interface. Dropping the packet.");
+            logging.critical("Exception occured while processing packet. Dropping the packet.");
             logging.critical(e, exc_info=True);
             traceback.print_exc()
         return [];
@@ -2690,12 +2624,6 @@ class HIPLib():
                     logging.debug("Initiator's HIT %s " % (Utils.ipv6_bytes_to_hex_formatted(sv.ihit)))
                     response.append((bytearray(sv.i2_packet.get_buffer()), (dst_str.strip(), 0)))
                     
-                    #if sv.is_responder:
-                    #sv.ihit = sv.rhit
-                    #sv.rhit = sv.ihit
-
-                    #sv.is_responder = False;
-
                     if sv.i2_retries > self.config["general"]["i2_retries"]:
                         hip_state.failed();
                         sv.failed_timeout = time.time() + self.config["general"]["failed_timeout"];
