@@ -28,6 +28,8 @@ class NetworkTopo( Topo ):
         router4 = self.addNode( 'r4', cls=LinuxRouter )
         router5 = self.addNode( 'r5', cls=LinuxRouter )
         router6 = self.addNode( 'r6', cls=LinuxRouter )
+        router7 = self.addNode( 'r7', cls=LinuxRouter )
+
         s1, s2, s3, s4 = [ self.addSwitch( s, cls=OVSKernelSwitch ) for s in ( 's1', 's2', 's3', 's4' ) ]
         self.addLink( s4, router1,
                 intfName2='r1-eth1',
@@ -47,19 +49,26 @@ class NetworkTopo( Topo ):
         self.addLink( s4, router6,
                 intfName2='r6-eth1',
                 params2={ 'ip' : '1.1.1.6/28' } ) # Spoke 3
+        self.addLink( s4, router7,
+                intfName2='r7-eth1',
+                params2={ 'ip' : '1.1.1.7/28' } ) # Spoke 4
         self.addLink( s1, router1, intfName2='r1-eth0',
                       params2={ 'ip' : '192.168.1.1/24' } )
         self.addLink( s2, router5, intfName2='r5-eth0',
                 params2={ 'ip' : '192.168.2.1/24' } )
         self.addLink( s3, router6, intfName2='r6-eth0',
                 params2={ 'ip' : '192.168.3.1/24' } )
+        self.addLink( s3, router7, intfName2='r7-eth0',
+                params2={ 'ip' : '192.168.4.1/24' } )
         h1 = self.addHost( 'h1', ip='192.168.1.100/24',
                            defaultRoute='via 192.168.1.1' )
         h2 = self.addHost( 'h2', ip='192.168.2.100/24',
                            defaultRoute='via 192.168.2.1' )
         h3 = self.addHost( 'h3', ip='192.168.3.100/24',
                            defaultRoute='via 192.168.3.1' )
-        for h, s in [ (h1, s1), (h2, s2), (h3, s3) ]:
+        h4 = self.addHost( 'h4', ip='192.168.4.100/24',
+                           defaultRoute='via 192.168.4.1' )
+        for h, s in [ (h1, s1), (h2, s2), (h3, s3), (h4, s3),  ]:
             self.addLink( h, s )
 from time import sleep
 def run():
@@ -72,6 +81,7 @@ def run():
     info( net[ 'r4' ].cmd( 'ifconfig r4-eth1 1.1.1.4 netmask 255.255.255.240' ) )
     info( net[ 'r5' ].cmd( 'ifconfig r5-eth1 1.1.1.5 netmask 255.255.255.240' ) )
     info( net[ 'r6' ].cmd( 'ifconfig r6-eth1 1.1.1.6 netmask 255.255.255.240' ) )
+    info( net[ 'r7' ].cmd( 'ifconfig r7-eth1 1.1.1.7 netmask 255.255.255.240' ) )
 
     info( net[ 'r1' ].cmd( '/sbin/ethtool -K r1-eth1 rx off tx off sg off' ) )
     info( net[ 'r1' ].cmd( '/sbin/ethtool -K r1-eth0 rx off tx off sg off' ) )
@@ -79,15 +89,18 @@ def run():
     info( net[ 'r3' ].cmd( '/sbin/ethtool -K r3-eth1 rx off tx off sg off' ) )
     info( net[ 'r4' ].cmd( '/sbin/ethtool -K r4-eth1 rx off tx off sg off' ) )
     info( net[ 'r5' ].cmd( '/sbin/ethtool -K r5-eth0 rx off tx off sg off' ) )
-    info( net[ 'r5' ].cmd( '/sbin/ethtool -K r5-eth1 rx off tx off sg off' ) )
+    info( net[ 'r6' ].cmd( '/sbin/ethtool -K r5-eth1 rx off tx off sg off' ) )
+    info( net[ 'r7' ].cmd( '/sbin/ethtool -K r5-eth1 rx off tx off sg off' ) )
 
     info( net[ 'h1' ].cmd( '/sbin/ethtool -K h1-eth0 rx off tx off sg off' ) )
     info( net[ 'h2' ].cmd( '/sbin/ethtool -K h2-eth0 rx off tx off sg off' ) )
     info( net[ 'h3' ].cmd( '/sbin/ethtool -K h2-eth0 rx off tx off sg off' ) )
+    info( net[ 'h4' ].cmd( '/sbin/ethtool -K h2-eth0 rx off tx off sg off' ) )
 
     info( net[ 'h1' ].cmd( 'ifconfig h1-eth0 mtu 1300' ) )
     info( net[ 'h2' ].cmd( 'ifconfig h2-eth0 mtu 1300' ) )
     info( net[ 'h3' ].cmd( 'ifconfig h3-eth0 mtu 1300' ) )
+    info( net[ 'h4' ].cmd( 'ifconfig h3-eth0 mtu 1300' ) )
 
     info( net[ 's1' ].cmd( 'ovs-vsctl set bridge s1 stp_enable=true' ) )
     info( net[ 's2' ].cmd( 'ovs-vsctl set bridge s2 stp_enable=true' ) )
@@ -109,6 +122,8 @@ def run():
     info( net[ 'r5' ].cmd( 'cd spoke-router-2 && python3 router.py  > /dev/null&' ) )
     info( '*** Running L3-VPN on router 6 *** \n')
     info( net[ 'r6' ].cmd( 'cd spoke-router-3 && python3 router.py  > /dev/null&' ) )
+    info( '*** Running L3-VPN on router 7 *** \n')
+    info( net[ 'r7' ].cmd( 'cd spoke-router-4 && python3 router.py  > /dev/null&' ) )
 
     sleep(10)
     info( net[ 'r2' ].cmd( 'ip addr' ) )
@@ -116,18 +131,22 @@ def run():
     info( net[ 'r2' ].cmd( 'ip route add 192.168.1.0/24 dev r2-tun1' ) )
     info( net[ 'r2' ].cmd( 'ip route add 192.168.2.0/24 dev r2-tun2' ) )
     info( net[ 'r2' ].cmd( 'ip route add 192.168.3.0/24 dev r2-tun3' ) )
+    info( net[ 'r2' ].cmd( 'ip route add 192.168.4.0/24 dev r2-tun4' ) )
 
     info( net[ 'r3' ].cmd( 'ip route add 192.168.2.0/24 dev r3-tun1' ) )
     info( net[ 'r3' ].cmd( 'ip route add 192.168.1.0/24 dev r3-tun2' ) )
     info( net[ 'r3' ].cmd( 'ip route add 192.168.3.0/24 dev r3-tun3' ) )
+    info( net[ 'r3' ].cmd( 'ip route add 192.168.4.0/24 dev r3-tun4' ) )
 
     info( net[ 'r4' ].cmd( 'ip route add 192.168.3.0/24 dev r4-tun1' ) )
     info( net[ 'r4' ].cmd( 'ip route add 192.168.1.0/24 dev r4-tun2' ) )
     info( net[ 'r4' ].cmd( 'ip route add 192.168.2.0/24 dev r4-tun3' ) )
+    info( net[ 'r4' ].cmd( 'ip route add 192.168.4.0/24 dev r4-tun4' ) )
     
     info( net[ 'r5' ].cmd( 'ip route add default dev r5-tun1' ) )
     info( net[ 'r1' ].cmd( 'ip route add default dev r1-tun1' ) )
     info( net[ 'r6' ].cmd( 'ip route add default dev r6-tun1' ) )
+    info( net[ 'r7' ].cmd( 'ip route add default dev r7-tun1' ) )
     
     CLI( net )
     net.stop()
