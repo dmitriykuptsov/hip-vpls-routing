@@ -20,7 +20,7 @@ __copyright__ = "Copyright 2020, strangebit"
 __license__ = "GPL"
 __version__ = "0.0.1b"
 __maintainer__ = "Dmitriy Kuptsov"
-__email__ = "dmitriy.kuptsov@gmail.com"
+__email__ = "dmitriy.kuptsov@strangebit.io"
 __status__ = "development"
 
 from binascii import hexlify
