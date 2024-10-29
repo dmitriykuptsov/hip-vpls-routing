@@ -112,7 +112,7 @@ class CryptoServer():
             if hip:
                 self.hip_socket.sendto(packet, dest)
         except Exception as e:
-           logging.debug("Exception occured while processing L2 frame")
+           logging.debug("Exception occured while trigger BEX")
            logging.debug(e)
 
 
