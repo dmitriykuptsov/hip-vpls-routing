@@ -21,14 +21,10 @@ killall ovs-testcontroller
 
 # Cloning the database
 git clone https://github.com/mininet/mininet.git
-#cd mininet
-#git tag  # list available versions
-#git checkout -b mininet-2.3.0 2.3.0  # or whatever version you wish to install
-cd ..
 
 # Installing the mininet globally
 sudo PYTHON=python3 mininet/util/install.sh -a
 
 # Running the VPLS emulated environment
-cd vpls-routing
+cd hip-vpls-routing
 sudo python3 l3-vpn-mn.py
