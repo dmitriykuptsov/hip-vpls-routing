@@ -63,12 +63,18 @@ def closed_callback(ihit, rhit, src, dst):
         except Exception as e:
             logger.critical("Exception occured in triggering BEX")
             logger.critical(e)
-        
+
 # Host Identity Protocol crypto server
 # Performs BEX and derives the keys to secure 
 # The dataplane
 cs = crypto_server.CryptoServer(completed_callback, closed_callback)
-demux = Demultiplexer(config["public_ip"], config["private_ip"], config["hub_ip"], config["auth_key"], config["enable_auth"])
+demux = Demultiplexer(config["public_ip"], 
+                      config["private_ip"], 
+                      config["hub_ip"], 
+                      config["public_interface"],
+                      config["private_interface"],
+                      config["auth_key"], 
+                      config["enable_auth"])
 
 cs.trigger_bex(Utils.hex_formatted_to_ipv6_bytes(config["ihit"]), 
                Utils.hex_formatted_to_ipv6_bytes(config["rhit"]), 

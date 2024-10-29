@@ -17,8 +17,10 @@
 
 config = {
     "public_ip": "1.1.1.5",
-    "private_ip": "192.168.2.1",
+    "private_ip": "192.168.2.2",
     "hub_ip": "1.1.1.3",
+    "public_interface": "r5-eth1",
+    "private_interface": "r5-tun1",
     "enable_auth": True,
     "auth_key": "PebyowtyutquicsetMypOybaxmiUnood",
     "ihit": "2001:0021:012c:ea2f:7f84:8bdc:fcbf:d22c",

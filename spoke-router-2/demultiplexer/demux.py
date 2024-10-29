@@ -42,25 +42,25 @@ ETHER_HEADER_LENGTH = 14
 
 class Demultiplexer():
 
-    def __init__(self, public_ip, private_ip, hub_ip, key = None, auth=False):
+    def __init__(self, public_ip, private_ip, hub_ip, public_interface, private_interface, key = None, auth=False):
         self.public_ip = public_ip
         self.private_ip = private_ip
         self.hub_ip = hub_ip
         self.auth = auth
-        self.key = None #bytearray(key.encode("ascii"))
+        self.key = None
 
-        demux_tun = tun.Tun(address="192.168.2.2", mtu=1500, name="r5-tun1");
+        tunif = tun.Tun(address=private_ip, mtu=1500, name=private_interface);
         self.socket_public = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.IPPROTO_IP)
-        self.socket_public.bind(("r5-eth1", 0x0800))
+        self.socket_public.bind((public_interface, 0x0800))
 
         self.socket_raw = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_RAW)
         self.socket_raw.bind((public_ip, 0))
         self.socket_raw.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1);
 
-        thread = threading.Thread(target=self.read_from_public, args=(self.socket_public, demux_tun, self.private_ip, ), daemon=True)
+        thread = threading.Thread(target=self.read_from_public, args=(self.socket_public, tunif, self.private_ip, ), daemon=True)
         thread.start()
 
-        thread = threading.Thread(target=self.read_from_private, args=(self.socket_raw, demux_tun, self.public_ip, self.hub_ip), daemon=True)
+        thread = threading.Thread(target=self.read_from_private, args=(self.socket_raw, tunif, self.public_ip, self.hub_ip), daemon=True)
         thread.start()
     
 
@@ -76,25 +76,6 @@ class Demultiplexer():
                 buf = pubfd.recv(mtu)
                 logging.debug("read_from_public")
                 logging.debug(list(buf))
-                """
-                if self.auth:
-                    if not self.key:
-                        continue
-                    outer = IPv4.IPv4Packet(buf[ETHER_HEADER_LENGTH:-SHA256_HMAC_LENGTH])
-                else:
-                    outer = IPv4.IPv4Packet(buf[ETHER_HEADER_LENGTH:])
-                destination = outer.get_destination_address()
-                if Misc.bytes_to_ipv4_string(destination) != self.public_ip:
-                    continue
-                if self.auth:
-                    icv = buf[-32:]
-                    sha256 = SHA256HMAC(self.key)
-                    hmac = sha256.digest(outer.get_payload())
-                    if icv != hmac:
-                        print(Misc.bytes_to_ipv4_string(outer.get_source_address()))
-                        logger.debug("Invalid ICV.... destination=%s key=%s" % (Misc.bytes_to_ipv4_string(destination), unhexlify(self.key)))
-                        continue
-                """
                 outer = IPv4.IPv4Packet(bytearray(buf[ETHER_HEADER_LENGTH:]))
 
                 source = outer.get_source_address()
@@ -126,12 +107,10 @@ class Demultiplexer():
                         continue
                     inner = IPv4.IPv4Packet(payload)
                 else:
-                    inner = IPv4.IPv4Packet(outer.get_payload())
-                #inner = outer.get_payload()
-                
+                    inner = IPv4.IPv4Packet(outer.get_payload())                
                 privfd.write(inner.get_buffer())
             except Exception as e:
-                logging.critical("read_from_public")
+                logging.debug("read from public")
                 logging.critical(traceback.format_exc())
                 logging.critical(e)
 
@@ -146,22 +125,6 @@ class Demultiplexer():
                 outer.set_protocol(4)
                 outer.set_ttl(128)
                 outer.set_ihl(5)
-                """
-                packet.set_payload(inner.get_buffer())
-                packet.set_ihl(5)
-                packet.set_total_length(len(packet.get_buffer()))
-                if self.auth:
-                    if not self.key:
-                        logger.critical("No key was found....")
-                        continue            
-                    sha256 = SHA256HMAC(self.key)
-                    hmac = sha256.digest(packet.get_payload())
-                    pubfd.sendto(packet.get_buffer() + hmac, (hub_ip, 0))
-                else:
-                    pubfd.sendto(packet.get_buffer(), (hub_ip, 0))                
-                """
-                #outer.set_payload(inner.get_buffer())
-                #outer.set_total_length(len(bytearray(outer.get_buffer())))
                 if self.auth:                    
                     if not self.key:
                         logger.critical("No key was found...")
@@ -175,7 +138,7 @@ class Demultiplexer():
                     aes = AES256CBCCipher()
                     payload = iv + aes.encrypt(self.key[0], iv, data)
                     outer.set_payload(payload + icv)
-                    logging.debug("read_from_private buffer.....")
+                    logging.debug("read_from_private")
                     logging.debug(list(payload + icv))
                     outer.set_total_length(len(bytearray(outer.get_buffer())))
                     pubfd.sendto(outer.get_buffer(), (hub_ip, 0))

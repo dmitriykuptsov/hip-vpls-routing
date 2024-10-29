@@ -41,7 +41,7 @@ ETHER_HEADER_LENGTH = 14
 
 class Demultiplexer():
 
-    def __init__(self, interfaces, own_ip, auth=True):
+    def __init__(self, interfaces, own_ip, own_interface, auth=True):
         self.interfaces = interfaces
         self.demux_table = {}
         self.keys = {}
@@ -49,16 +49,15 @@ class Demultiplexer():
         self.own_ip = own_ip
         self.tuns = []
         self.socket = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.IPPROTO_IP)
-        self.socket.bind(("r4-eth1", 0x0800))
+        self.socket.bind((own_interface, 0x0800))
         self.socket_raw = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_RAW)
         self.socket_raw.bind((own_ip, 0))
         self.socket_raw.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1);
         for interface in self.interfaces:
-            #self.keys[interface["destination"]] = bytearray(interface["auth_key"].encode("ascii"))
-            demux_tun = tun.Tun(address=interface["address"], mtu=interface["mtu"], name=interface["name"]);
+            tunif = tun.Tun(address=interface["address"], mtu=interface["mtu"], name=interface["name"]);
             network = Misc.ipv4_address_to_int(interface["address"]) & Misc.ipv4_address_to_int(interface["mask"])
-            self.demux_table[Misc.bytes_to_ipv4_string(Misc.int_to_ipv4_address(network))] = demux_tun;
-            thread = threading.Thread(target=self.read_from_tun, args=(demux_tun, self.socket_raw, interface["destination"], interface["mtu"]), daemon=True)
+            self.demux_table[Misc.bytes_to_ipv4_string(Misc.int_to_ipv4_address(network))] = tunif;
+            thread = threading.Thread(target=self.read_from_tun, args=(tunif, self.socket_raw, interface["destination"], interface["mtu"]), daemon=True)
             thread.start()
 
         thread = threading.Thread(target=self.read_from_public, args=(self.socket, ), daemon=True)
@@ -84,6 +83,7 @@ class Demultiplexer():
                     continue
                 if self.auth:
                     buf = outer.get_payload()
+                    logging.debug("read_from_public")
                     logging.debug(list(buf))
                     icv = buf[-SHA256_HMAC_LENGTH:]
                     buf = buf[:-SHA256_HMAC_LENGTH]
@@ -129,9 +129,7 @@ class Demultiplexer():
                 outer.set_protocol(4)
                 outer.set_ttl(128)
                 outer.set_ihl(5)
-                #outer.set_payload(inner.get_buffer())
-                #outer.set_total_length(len(bytearray(outer.get_buffer())))
-                if self.auth:                    
+                if self.auth:
                     key = self.keys.get(destination, None)
                     if not key:
                         logger.critical("No key was found... %s " % destination)
@@ -142,6 +140,7 @@ class Demultiplexer():
                     data = buf
                     aes = AES256CBCCipher()
                     payload = iv + aes.encrypt(key[0], iv, data)
+                    logging.debug("read_from_tun")
                     outer.set_payload(payload + icv)
                     outer.set_total_length(len(bytearray(outer.get_buffer())))
                     sockfd.sendto(outer.get_buffer(), (destination, 0))

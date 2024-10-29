@@ -17,6 +17,7 @@
 
 config = {
     "own_ip": "1.1.1.2",
+    "own_interface": "r2-eth1",
     "enable_auth": True,
     "routes": {
         "192.168.1.0/24": "r2-tun1",

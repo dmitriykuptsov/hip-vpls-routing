@@ -17,6 +17,7 @@
 
 config = {
     "own_ip": "1.1.1.3",
+    "own_interface": "r3-eth1",
     "enable_auth": True,
     "routes": {
         "192.168.2.0/24": "r3-tun1",
