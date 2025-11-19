@@ -107,7 +107,7 @@ class Demultiplexer():
                         continue
                     inner = IPv4.IPv4Packet(payload)
                 else:
-                    inner = IPv4.IPv4Packet(outer.get_payload())                
+                    inner = IPv4.IPv4Packet(outer.get_payload()[1:])                
                 privfd.write(inner.get_buffer())
             except Exception as e:
                 logging.debug("read from public")
