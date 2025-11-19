@@ -132,6 +132,7 @@ class Demultiplexer():
                 outer.set_protocol(4)
                 outer.set_ttl(128)
                 outer.set_ihl(5)
+                logging.debug("PROTOCOL VERSION ...  %s" % (outer.get_protocol()))
                 if auth:
                     key = self.keys.get(destination, None)
                     if not key:
