@@ -123,6 +123,7 @@ class Demultiplexer():
                 outer.set_destination_address(Misc.ipv4_address_to_bytes(hub_ip))
                 outer.set_source_address(Misc.ipv4_address_to_bytes(public_ip))
                 outer.set_protocol(4)
+                outer.set_version(4)
                 outer.set_ttl(128)
                 outer.set_ihl(5)
                 if self.auth:                    
