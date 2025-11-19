@@ -95,18 +95,20 @@ class Demultiplexer():
                     #iv = buf[:AES256_BLOCK_SIZE]
                     #data = buf[AES256_BLOCK_SIZE:]
                     #aes = AES256CBCCipher()
-                    #logging.debug(len(data))
+                    logging.debug(len(buf))
                     payload = buf #aes.decrypt(key[0], iv, data)
-                    #logging.debug(list(key[0]))
-                    #logging.debug(list(key[1]))
+                    logging.debug(list(key[0]))
+                    logging.debug(list(key[1]))
                     sha256 = SHA256HMAC(key[1])
                     hmac = sha256.digest(payload)
                     
                     if icv != hmac:
                         logger.critical("Invalid ICV... %s " % hexlify(key[1]))
                         continue
+                    logging.debug("AH PACKET.........")
                     inner = IPv4.IPv4Packet(payload)
                 else:
+                    logging.debug("PLAIN PACKET.........")
                     inner = IPv4.IPv4Packet(outer.get_payload()[1:])
                 source = inner.get_source_address()
                 destination = inner.get_destination_address()
@@ -137,7 +139,7 @@ class Demultiplexer():
                         continue
                     sha256 = SHA256HMAC(key[1])
                     icv = sha256.digest(buf)
-                    iv = urandom(AES256_BLOCK_SIZE)
+                    #iv = urandom(AES256_BLOCK_SIZE)
                     data = buf
                     #aes = AES256CBCCipher()
                     #payload = bytearray([0x1]) + iv + aes.encrypt(key[0], iv, data)
@@ -145,11 +147,13 @@ class Demultiplexer():
                     logging.debug("read_from_tun")
                     outer.set_payload(payload + icv)
                     outer.set_total_length(len(bytearray(outer.get_buffer())))
+                    logging.debug("SENDING DATA + AH TO %s" % (destination, ))
                     sockfd.sendto(outer.get_buffer(), (destination, 0))
                 else:
                     data = buf
                     payload = bytearray([0x0]) + data
                     outer.set_payload(payload)
+                    logging.debug("SENDING PLAIN DATA TO %s" % (destination, ))
                     sockfd.sendto(outer.get_buffer(), (destination, 0))
             except Exception as e:
                 logging.debug(traceback.format_exc())
