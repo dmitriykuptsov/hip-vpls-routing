@@ -34,18 +34,6 @@ config = {
         },
         {
             "src": "1.1.1.4",
-            "dst": "1.1.1.2",
-            "ihit": "2001:0021:7e43:e8e2:afd2:69fa:833c:cb1f",
-            "rhit": "2001:0021:b4b6:b7a4:f4cc:0f6b:8779:8ef9"
-        },
-        {
-            "src": "1.1.1.4",
-            "dst": "1.1.1.3",
-            "ihit": "2001:0021:7e43:e8e2:afd2:69fa:833c:cb1f",
-            "rhit": "2001:0021:0093:cbad:9ab7:eed9:c596:af31"
-        },
-        {
-            "src": "1.1.1.4",
             "dst": "1.1.1.7",
             "ihit": "2001:0021:7e43:e8e2:afd2:69fa:833c:cb1f",
             "rhit": "2001:0021:032b:595c:cee0:1b09:20ea:0ead"
@@ -57,7 +45,8 @@ config = {
             "address": "192.168.3.2",
             "mask": "255.255.255.0",
             "destination": "1.1.1.6",
-            "mtu": 1400
+            "mtu": 1400,
+            "auth": True
         },
         {
 
@@ -65,22 +54,24 @@ config = {
             "address": "192.168.1.2",
             "mask": "255.255.255.0",
             "destination": "1.1.1.2",
-            "mtu": 1400
-            
+            "mtu": 1400,
+            "auth": False
         }, 
         {
             "name": "r4-tun3",
             "address": "192.168.2.2",
             "mask": "255.255.255.0",
             "destination": "1.1.1.3",
-            "mtu": 1400
+            "mtu": 1400,
+            "auth": False
         },
         {
             "name": "r4-tun4",
             "address": "192.168.4.2",
             "mask": "255.255.255.0",
             "destination": "1.1.1.7",
-            "mtu": 1400
+            "mtu": 1400,
+            "auth": True
         }
     ]
 }

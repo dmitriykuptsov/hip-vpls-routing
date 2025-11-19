@@ -57,7 +57,7 @@ class Demultiplexer():
             tunif = tun.Tun(address=interface["address"], mtu=interface["mtu"], name=interface["name"]);
             network = Misc.ipv4_address_to_int(interface["address"]) & Misc.ipv4_address_to_int(interface["mask"])
             self.demux_table[Misc.bytes_to_ipv4_string(Misc.int_to_ipv4_address(network))] = tunif;
-            thread = threading.Thread(target=self.read_from_tun, args=(tunif, self.socket_raw, interface["destination"], interface["mtu"]), daemon=True)
+            thread = threading.Thread(target=self.read_from_tun, args=(tunif, self.socket_raw, interface["destination"], interface["mtu"], interface["auth"]), daemon=True)
             thread.start()
 
         thread = threading.Thread(target=self.read_from_public, args=(self.socket, ), daemon=True)
@@ -81,24 +81,24 @@ class Demultiplexer():
 
                 if Misc.bytes_to_ipv4_string(destination) != self.own_ip:
                     continue
-                if self.auth:
+                if self.auth and outer.get_payload()[0] == 0x1:
                     buf = outer.get_payload()
                     logging.debug("read_from_public")
                     logging.debug(list(buf))
                     icv = buf[-SHA256_HMAC_LENGTH:]
-                    buf = buf[:-SHA256_HMAC_LENGTH]
+                    buf = buf[1:-SHA256_HMAC_LENGTH]
                     key = self.keys.get(Misc.bytes_to_ipv4_string(source), None)
                     if not key:
                         logger.critical("No key was found read_from_public... %s " % Misc.bytes_to_ipv4_string(source))
                         continue
 
-                    iv = buf[:AES256_BLOCK_SIZE]
-                    data = buf[AES256_BLOCK_SIZE:]
-                    aes = AES256CBCCipher()
-                    logging.debug(len(data))
-                    payload = aes.decrypt(key[0], iv, data)
-                    logging.debug(list(key[0]))
-                    logging.debug(list(key[1]))
+                    #iv = buf[:AES256_BLOCK_SIZE]
+                    #data = buf[AES256_BLOCK_SIZE:]
+                    #aes = AES256CBCCipher()
+                    #logging.debug(len(data))
+                    payload = buf #aes.decrypt(key[0], iv, data)
+                    #logging.debug(list(key[0]))
+                    #logging.debug(list(key[1]))
                     sha256 = SHA256HMAC(key[1])
                     hmac = sha256.digest(payload)
                     
@@ -107,10 +107,11 @@ class Demultiplexer():
                         continue
                     inner = IPv4.IPv4Packet(payload)
                 else:
-                    inner = IPv4.IPv4Packet(outer.get_payload())
+                    inner = IPv4.IPv4Packet(outer.get_payload()[1:])
                 source = inner.get_source_address()
                 destination = inner.get_destination_address()
                 network = Misc.ipv4_address_to_int(Misc.bytes_to_ipv4_string(destination)) & Misc.ipv4_address_to_int("255.255.255.0")
+                logging.debug(Misc.int_to_ipv4_address(network))
                 tun = self.demux_table[Misc.bytes_to_ipv4_string(Misc.int_to_ipv4_address(network))]
                 tun.write(inner.get_buffer())
             except Exception as e:
@@ -118,7 +119,7 @@ class Demultiplexer():
                 logging.debug(e)
 
     
-    def read_from_tun(self, tunfd, sockfd, destination, mtu = 1500):
+    def read_from_tun(self, tunfd, sockfd, destination, mtu = 1500, auth=False):
         while True:
             try:
                 buf = tunfd.read(mtu);
@@ -129,7 +130,7 @@ class Demultiplexer():
                 outer.set_protocol(4)
                 outer.set_ttl(128)
                 outer.set_ihl(5)
-                if self.auth:
+                if auth:
                     key = self.keys.get(destination, None)
                     if not key:
                         logger.critical("No key was found... %s " % destination)
@@ -138,13 +139,17 @@ class Demultiplexer():
                     icv = sha256.digest(buf)
                     iv = urandom(AES256_BLOCK_SIZE)
                     data = buf
-                    aes = AES256CBCCipher()
-                    payload = iv + aes.encrypt(key[0], iv, data)
+                    #aes = AES256CBCCipher()
+                    #payload = bytearray([0x1]) + iv + aes.encrypt(key[0], iv, data)
+                    payload = bytearray([0x1]) + data
                     logging.debug("read_from_tun")
                     outer.set_payload(payload + icv)
                     outer.set_total_length(len(bytearray(outer.get_buffer())))
                     sockfd.sendto(outer.get_buffer(), (destination, 0))
                 else:
+                    data = buf
+                    payload = bytearray([0x0]) + data
+                    outer.set_payload(payload)
                     sockfd.sendto(outer.get_buffer(), (destination, 0))
             except Exception as e:
                 logging.debug(traceback.format_exc())
