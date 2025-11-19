@@ -130,6 +130,7 @@ class Demultiplexer():
                 outer.set_source_address(Misc.ipv4_address_to_bytes(self.own_ip))
                 outer.set_destination_address(Misc.ipv4_address_to_bytes(destination))
                 outer.set_protocol(4)
+                outer.set_version(4)
                 outer.set_ttl(128)
                 outer.set_ihl(5)
                 logging.debug("PROTOCOL VERSION ...  %s" % (outer.get_protocol()))
@@ -141,7 +142,7 @@ class Demultiplexer():
                     sha256 = SHA256HMAC(key[1])
                     icv = sha256.digest(buf)
                     #iv = urandom(AES256_BLOCK_SIZE)
-                    data = buf
+                    data = inner.get_buffer()
                     #aes = AES256CBCCipher()
                     #payload = bytearray([0x1]) + iv + aes.encrypt(key[0], iv, data)
                     payload = bytearray([0x1]) + data
@@ -156,13 +157,14 @@ class Demultiplexer():
                     
                     sockfd.sendto(outer.get_buffer(), (destination, 0))
                 else:
-                    data = buf
+                    data = inner.get_buffer()
                     payload = bytearray([0x0]) + data
                     outer.set_payload(payload)
                     logging.debug(list(payload))
                     logging.debug("SENDING PLAIN DATA TO %s" % (destination, ))
                     logging.debug("Packet version")
                     logging.debug(outer.get_version())
+                    logging.debug("-----------------------------------")
                     logging.debug(list(outer.get_buffer()))
                     sockfd.sendto(outer.get_buffer(), (destination, 0))
             except Exception as e:
