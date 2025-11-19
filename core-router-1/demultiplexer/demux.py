@@ -148,12 +148,14 @@ class Demultiplexer():
                     outer.set_payload(payload + icv)
                     outer.set_total_length(len(bytearray(outer.get_buffer())))
                     logging.debug("SENDING DATA + AH TO %s" % (destination, ))
+                    logging.debug(outer.get_buffer())
                     sockfd.sendto(outer.get_buffer(), (destination, 0))
                 else:
                     data = buf
                     payload = bytearray([0x0]) + data
                     outer.set_payload(payload)
                     logging.debug("SENDING PLAIN DATA TO %s" % (destination, ))
+                    logging.debug(outer.get_buffer())
                     sockfd.sendto(outer.get_buffer(), (destination, 0))
             except Exception as e:
                 logging.debug(traceback.format_exc())
