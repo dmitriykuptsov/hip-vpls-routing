@@ -39,6 +39,8 @@ IPV4_DEFAULT_TTL 				= 0x80;
 IPV4_VERSION                    = 0x4;
 IPV4_IHL_NO_OPTIONS             = 0x5;
 
+IPV4_PROTOCOL_NUMBER            = 0x4; 
+
 class IPv4Packet():
 	def __init__(self, buffer = None):
 		self.buffer = buffer;

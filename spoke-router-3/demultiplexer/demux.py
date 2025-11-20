@@ -129,7 +129,7 @@ class Demultiplexer():
                 outer = IPv4.IPv4Packet()
                 outer.set_destination_address(Misc.ipv4_address_to_bytes(hub_ip))
                 outer.set_source_address(Misc.ipv4_address_to_bytes(public_ip))
-                outer.set_protocol(4)
+                outer.set_protocol(GRE.GRE_PROTOCOL_NUMBER)
                 outer.set_version(4)
                 outer.set_ttl(128)
                 outer.set_ihl(5)
@@ -137,7 +137,7 @@ class Demultiplexer():
                 data = buf
 
                 gre = GRE.GREPacket()
-                gre.set_protocol(GRE.GRE_PROTOCOL_NUMBER)
+                gre.set_protocol(IPv4.IPV4_VERSION)
 
                 if self.auth:                    
                     if not self.key:
