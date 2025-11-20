@@ -108,7 +108,10 @@ class Demultiplexer():
                     inner = IPv4.IPv4Packet(payload)
                 else:
                     inner = IPv4.IPv4Packet(outer.get_payload()[GRE.GRE_HEADER_LENGTH:])
-                logging.debug(list(outer.get_payload()[GRE.GRE_HEADER_LENGTH:]))
+                logging.debug(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+                logging.debug(list(outer.get_payload()[4:]))
+                logging.debug(list(outer.get_payload()[:]))
+                logging.debug("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
                 privfd.write(inner.get_buffer())
             except Exception as e:
                 logging.debug("read from public")
