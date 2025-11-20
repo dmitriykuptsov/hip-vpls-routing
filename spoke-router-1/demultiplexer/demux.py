@@ -159,6 +159,7 @@ class Demultiplexer():
                     outer.set_total_length(len(bytearray(outer.get_buffer())))
                     pubfd.sendto(outer.get_buffer(), (hub_ip, 0))
                 else:
+                    gre.set_flags(0)
                     payload = gre.get_buffer() + data
                     outer.set_payload(payload)
                     pubfd.sendto(outer.get_buffer(), (hub_ip, 0))

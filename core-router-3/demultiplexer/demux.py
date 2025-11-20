@@ -171,7 +171,7 @@ class Demultiplexer():
                     
                     sockfd.sendto(outer.get_buffer(), (destination, 0))
                 else:
-                    gre.set_flags(1)
+                    gre.set_flags(0)
                     data = inner.get_buffer()
                     payload = gre.get_buffer() + data
                     outer.set_payload(payload)
