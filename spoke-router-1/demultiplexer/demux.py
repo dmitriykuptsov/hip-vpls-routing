@@ -137,7 +137,7 @@ class Demultiplexer():
                 data = buf
 
                 gre = GRE.GREPacket()
-                gre.set_protocol(IPv4.IPV4_VERSION)
+                gre.set_protocol(0x0800)
 
                 if self.auth:                    
                     if not self.key:
