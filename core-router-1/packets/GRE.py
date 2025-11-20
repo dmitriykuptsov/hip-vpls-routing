@@ -37,7 +37,7 @@ class GREPacket():
         buf = self.buffer[PROTOCOL_OFFSET:PROTOCOL_OFFSET + 1];
         return ((buf[0] << 8) & 0xFF00 | buf[1] & 0xFF)
     def set_protocol(self, protocol):
-        self.buffer[PROTOCOL_OFFSET] = protocol << 0x8;
+        self.buffer[PROTOCOL_OFFSET] = (protocol >> 0x8) & 0xFF;
         self.buffer[PROTOCOL_OFFSET + 1] = protocol & 0xFF;
     def get_flags(self):
         return (self.buffer[FLAGS_OFFSET] >> 3) & 0xFF;
