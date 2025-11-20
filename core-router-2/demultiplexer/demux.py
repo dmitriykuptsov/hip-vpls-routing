@@ -88,6 +88,10 @@ class Demultiplexer():
                     logging.debug(list(buf))
                     icv = buf[-SHA256_HMAC_LENGTH:]
                     buf = buf[:-SHA256_HMAC_LENGTH]
+                    logging.debug(Misc.bytes_to_ipv4_string(source))
+                    logging.debug("=+++++++++++++++=")
+                    logging.debug(list(buf))
+                    logging.debug("=+++++++++++++++=")
                     key = self.keys.get(Misc.bytes_to_ipv4_string(source), None)
                     if not key:
                         logger.critical("No key was found read_from_public... %s " % Misc.bytes_to_ipv4_string(source))
