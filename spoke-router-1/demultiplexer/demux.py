@@ -83,7 +83,7 @@ class Demultiplexer():
 
                 if Misc.bytes_to_ipv4_string(destination) != self.public_ip:
                     continue
-                gre = GRE.GREPacket(outer.get_payload())
+                gre = GRE.GREPacket(outer.get_payload()[:GRE.GRE_HEADER_LENGTH])
                 if self.auth and gre.get_flags() == 0x1:
                     buf = outer.get_payload()                    
                     icv = buf[-SHA256_HMAC_LENGTH:]
@@ -107,7 +107,8 @@ class Demultiplexer():
                         continue
                     inner = IPv4.IPv4Packet(payload)
                 else:
-                    inner = IPv4.IPv4Packet(outer.get_payload()[GRE.GRE_HEADER_LENGTH:])                
+                    inner = IPv4.IPv4Packet(outer.get_payload()[GRE.GRE_HEADER_LENGTH:])
+                logging.debug(list(outer.get_payload()[GRE.GRE_HEADER_LENGTH:]))
                 privfd.write(inner.get_buffer())
             except Exception as e:
                 logging.debug("read from public")
