@@ -166,6 +166,7 @@ class Demultiplexer():
                     data = inner.get_buffer()
                     payload = gre.get_buffer() + data
                     outer.set_payload(payload)
+                    outer.set_total_length(len(bytearray(outer.get_buffer())))
                     logging.debug(list(payload))
                     logging.debug("SENDING PLAIN DATA TO %s" % (destination, ))
                     logging.debug("Packet version")
