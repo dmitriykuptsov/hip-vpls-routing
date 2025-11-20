@@ -19,7 +19,7 @@ import threading
 # Tunneling interfaces
 from networking import tun
 # IPv4 packet structure
-from packets import IPv4, Ethernet
+from packets import IPv4, Ethernet, GRE
 # Sockets
 import socket
 # Utilities
@@ -83,11 +83,11 @@ class Demultiplexer():
 
                 if Misc.bytes_to_ipv4_string(destination) != self.public_ip:
                     continue
-
-                if self.auth and outer.get_payload()[0] == 0x1:
+                gre = GRE.GREPacket(outer.get_payload())
+                if self.auth and gre.get_flags() == 0x1:
                     buf = outer.get_payload()                    
                     icv = buf[-SHA256_HMAC_LENGTH:]
-                    buf = buf[1:-SHA256_HMAC_LENGTH]
+                    buf = buf[GRE.GRE_HEADER_LENGTH:-SHA256_HMAC_LENGTH]
                     
                     if not self.key:
                         logger.critical("No key was found read_from_public... %s " % Misc.bytes_to_ipv4_string(source))
@@ -107,7 +107,7 @@ class Demultiplexer():
                         continue
                     inner = IPv4.IPv4Packet(payload)
                 else:
-                    inner = IPv4.IPv4Packet(outer.get_payload()[1:])                
+                    inner = IPv4.IPv4Packet(outer.get_payload()[GRE.GRE_HEADER_LENGTH:])                
                 privfd.write(inner.get_buffer())
             except Exception as e:
                 logging.debug("read from public")
@@ -126,6 +126,10 @@ class Demultiplexer():
                 outer.set_version(4)
                 outer.set_ttl(128)
                 outer.set_ihl(5)
+
+                gre = GRE.GREPacket()
+                gre.set_protocol(GRE.GRE_PROTOCOL_NUMBER)
+
                 if self.auth:                    
                     if not self.key:
                         logger.critical("No key was found...")
@@ -138,14 +142,16 @@ class Demultiplexer():
                     data = buf
                     #aes = AES256CBCCipher()
                     #payload = iv + aes.encrypt(self.key[0], iv, data)
-                    payload = bytearray([0x1]) + data
+                    gre.set_flags(1)
+                    
+                    payload = gre.get_buffer() + data
                     outer.set_payload(payload + icv)
                     #logging.debug("read_from_private")
                     #logging.debug(list(payload + icv))
                     outer.set_total_length(len(bytearray(outer.get_buffer())))
                     pubfd.sendto(outer.get_buffer(), (hub_ip, 0))
                 else:
-                    payload = bytearray([0x0]) + data
+                    payload = gre.get_buffer() + data
                     outer.set_payload(payload)
                     pubfd.sendto(outer.get_buffer(), (hub_ip, 0))
             except Exception as e:

@@ -19,7 +19,7 @@ import threading
 # Tunneling interfaces
 from networking import tun
 # IPv4 packet structure
-from packets import IPv4
+from packets import IPv4, GRE
 # Sockets
 import socket
 import traceback
@@ -78,15 +78,15 @@ class Demultiplexer():
 
                 source = outer.get_source_address()
                 destination = outer.get_destination_address()
-
+                gre = GRE.GREPacket(outer.get_payload())
                 if Misc.bytes_to_ipv4_string(destination) != self.own_ip:
                     continue
-                if self.auth and outer.get_payload()[0] == 0x1:
+                if self.auth and gre.get_flags() == 0x1:
                     buf = outer.get_payload()
                     logging.debug("read_from_public")
                     logging.debug(list(buf))
                     icv = buf[-SHA256_HMAC_LENGTH:]
-                    buf = buf[1:-SHA256_HMAC_LENGTH]
+                    buf = buf[GRE.GRE_HEADER_LENGTH:-SHA256_HMAC_LENGTH]
                     key = self.keys.get(Misc.bytes_to_ipv4_string(source), None)
                     if not key:
                         logger.critical("No key was found read_from_public... %s " % Misc.bytes_to_ipv4_string(source))
@@ -109,7 +109,7 @@ class Demultiplexer():
                     inner = IPv4.IPv4Packet(payload)
                 else:
                     logging.debug("PLAIN PACKET.........")
-                    inner = IPv4.IPv4Packet(outer.get_payload()[1:])
+                    inner = IPv4.IPv4Packet(outer.get_payload()[GRE.GRE_HEADER_LENGTH:])
                 source = inner.get_source_address()
                 destination = inner.get_destination_address()
                 network = Misc.ipv4_address_to_int(Misc.bytes_to_ipv4_string(destination)) & Misc.ipv4_address_to_int("255.255.255.0")
@@ -133,19 +133,24 @@ class Demultiplexer():
                 outer.set_version(4)
                 outer.set_ttl(128)
                 outer.set_ihl(5)
+                gre = GRE.GREPacket()
+                gre.set_protocol(GRE.GRE_PROTOCOL_NUMBER)
                 logging.debug("PROTOCOL VERSION ...  %s" % (outer.get_protocol()))
                 if auth:
                     key = self.keys.get(destination, None)
                     if not key:
                         logger.critical("No key was found... %s " % destination)
                         continue
+                    gre.set_flags(1)
                     sha256 = SHA256HMAC(key[1])
                     icv = sha256.digest(buf)
                     #iv = urandom(AES256_BLOCK_SIZE)
                     data = inner.get_buffer()
                     #aes = AES256CBCCipher()
                     #payload = bytearray([0x1]) + iv + aes.encrypt(key[0], iv, data)
-                    payload = bytearray([0x1]) + data
+                    
+                    
+                    payload = gre.get_buffer() + data
                     logging.debug("read_from_tun")
                     outer.set_payload(payload + icv)
                     outer.set_total_length(len(bytearray(outer.get_buffer())))
@@ -157,8 +162,9 @@ class Demultiplexer():
                     
                     sockfd.sendto(outer.get_buffer(), (destination, 0))
                 else:
+                    gre.set_flags(1)
                     data = inner.get_buffer()
-                    payload = bytearray([0x0]) + data
+                    payload = gre.get_buffer() + data
                     outer.set_payload(payload)
                     logging.debug(list(payload))
                     logging.debug("SENDING PLAIN DATA TO %s" % (destination, ))
