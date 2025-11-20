@@ -82,6 +82,10 @@ class Demultiplexer():
 
                 if Misc.bytes_to_ipv4_string(destination) != self.own_ip:
                     continue
+                logging.debug("------------------------------------")
+                logging.debug(gre.get_flags())
+                logging.debug("------------------------------------")
+                logging.debug(list(gre.get_buffer()))
                 if self.auth and gre.get_flags() == 0x1:
                     buf = outer.get_payload()[GRE.GRE_HEADER_LENGTH:]
                     logging.debug("read_from_public")
