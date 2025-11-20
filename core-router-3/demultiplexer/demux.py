@@ -79,6 +79,7 @@ class Demultiplexer():
                 source = outer.get_source_address()
                 destination = outer.get_destination_address()
                 gre = GRE.GREPacket(outer.get_payload()[:GRE.GRE_HEADER_LENGTH])
+
                 if Misc.bytes_to_ipv4_string(destination) != self.own_ip:
                     continue
                 if self.auth and gre.get_flags() == 0x1:
@@ -86,7 +87,7 @@ class Demultiplexer():
                     logging.debug("read_from_public")
                     logging.debug(list(buf))
                     icv = buf[-SHA256_HMAC_LENGTH:]
-                    buf = buf[GRE.GRE_HEADER_LENGTH:-SHA256_HMAC_LENGTH]
+                    buf = buf[:-SHA256_HMAC_LENGTH]
                     key = self.keys.get(Misc.bytes_to_ipv4_string(source), None)
                     if not key:
                         logger.critical("No key was found read_from_public... %s " % Misc.bytes_to_ipv4_string(source))
