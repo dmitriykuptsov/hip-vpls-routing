@@ -81,11 +81,14 @@ class Demultiplexer():
                 source = outer.get_source_address()
                 destination = outer.get_destination_address()
 
+                logging.debug("Source %s" % Misc.bytes_to_ipv4_string(source))
+                logging.debug("Destination %s" % Misc.bytes_to_ipv4_string(destination))
+
                 if Misc.bytes_to_ipv4_string(destination) != self.public_ip:
                     continue
                 gre = GRE.GREPacket(outer.get_payload()[:GRE.GRE_HEADER_LENGTH])
                 if self.auth and gre.get_flags() == 0x1:
-                    buf = outer.get_payload()                    
+                    buf = outer.get_payload()
                     icv = buf[-SHA256_HMAC_LENGTH:]
                     buf = buf[GRE.GRE_HEADER_LENGTH:-SHA256_HMAC_LENGTH]
                     
@@ -131,6 +134,8 @@ class Demultiplexer():
                 outer.set_ttl(128)
                 outer.set_ihl(5)
 
+                data = buf
+
                 gre = GRE.GREPacket()
                 gre.set_protocol(GRE.GRE_PROTOCOL_NUMBER)
 
@@ -143,11 +148,10 @@ class Demultiplexer():
                     #logging.debug(list(self.key[1]))
                     icv = sha256.digest(buf)
                     #iv = urandom(AES256_BLOCK_SIZE)
-                    data = buf
+                    #data = buf
                     #aes = AES256CBCCipher()
                     #payload = iv + aes.encrypt(self.key[0], iv, data)
                     gre.set_flags(1)
-                    
                     payload = gre.get_buffer() + data
                     outer.set_payload(payload + icv)
                     #logging.debug("read_from_private")
