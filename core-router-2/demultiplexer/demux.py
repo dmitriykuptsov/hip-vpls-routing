@@ -78,11 +78,11 @@ class Demultiplexer():
 
                 source = outer.get_source_address()
                 destination = outer.get_destination_address()
-                gre = GRE.GREPacket(outer.get_payload())
+                gre = GRE.GREPacket(outer.get_payload()[:GRE.GRE_HEADER_LENGTH])
                 if Misc.bytes_to_ipv4_string(destination) != self.own_ip:
                     continue
                 if self.auth and gre.get_flags() == 0x1:
-                    buf = outer.get_payload()
+                    buf = outer.get_payload()[GRE.GRE_HEADER_LENGTH:]
                     logging.debug("read_from_public")
                     logging.debug(list(buf))
                     icv = buf[-SHA256_HMAC_LENGTH:]
