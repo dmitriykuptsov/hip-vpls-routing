@@ -137,8 +137,6 @@ class Demultiplexer():
                 outer.set_ttl(128)
                 outer.set_ihl(5)
 
-                data = buf
-
                 gre = GRE.GREPacket()
                 gre.set_protocol(0x0800)
 
@@ -147,9 +145,9 @@ class Demultiplexer():
                         logger.critical("No key was found...")
                         continue
                     sha256 = SHA256HMAC(self.key[1])
-                    icv = sha256.digest(data)
+                    icv = sha256.digest(inner.get_buffer())
                     gre.set_flags(1)
-                    payload = gre.get_buffer() + data
+                    payload = gre.get_buffer() + inner.get_buffer()
                     outer.set_payload(payload + icv)
                     outer.set_total_length(len(bytearray(outer.get_buffer())))
                     logging.debug("OUTER PACKET........ %s" % list(outer.get_buffer()))
@@ -162,7 +160,7 @@ class Demultiplexer():
                     logging.debug("-------------------------")
                 else:
                     gre.set_flags(0)
-                    payload = gre.get_buffer() + data
+                    payload = gre.get_buffer() + inner.get_buffer()
                     outer.set_payload(payload)
                     pubfd.sendto(outer.get_buffer(), (hub_ip, 0))
             except Exception as e:
