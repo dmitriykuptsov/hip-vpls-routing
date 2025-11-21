@@ -18,13 +18,6 @@
 config = {
     "own_ip": "1.1.1.4",
     "own_interface": "r4-eth1",
-    "enable_auth": True,
-    "routes": {
-        "192.168.1.0/24": "r4-tun1",
-        "192.168.2.0/24": "r4-tun2",
-        "192.168.3.0/24": "r4-tun2",
-        "192.168.4.0/24": "r4-tun2"
-    },
     "hip": [
         {
             "src": "1.1.1.4",
@@ -41,8 +34,7 @@ config = {
     ],
     "interfaces": [
         {
-            "name": "r4-tun1",
-            "address": "192.168.3.2",
+            "address": "192.168.3.0",
             "mask": "255.255.255.0",
             "destination": "1.1.1.6",
             "mtu": 1400,
@@ -51,23 +43,21 @@ config = {
         {
 
             "name": "r4-tun2",
-            "address": "192.168.1.2",
+            "address": "192.168.1.0",
             "mask": "255.255.255.0",
             "destination": "1.1.1.2",
             "mtu": 1400,
             "auth": False
         }, 
         {
-            "name": "r4-tun3",
-            "address": "192.168.2.2",
+            "address": "192.168.2.0",
             "mask": "255.255.255.0",
             "destination": "1.1.1.3",
             "mtu": 1400,
             "auth": False
         },
         {
-            "name": "r4-tun4",
-            "address": "192.168.4.2",
+            "address": "192.168.4.0",
             "mask": "255.255.255.0",
             "destination": "1.1.1.7",
             "mtu": 1400,
