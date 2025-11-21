@@ -72,7 +72,7 @@ class Demultiplexer():
     def read(self, sock_read, socket_write, mtu = 1500):
         while True:
             try:
-                buf = sock_read.recv(mtu)
+                (buf, address) = sock_read.recvfrom(mtu)
                 outer = IPv4.IPv4Packet(bytearray(buf[ETHER_HEADER_LENGTH:]))
 
                 source = outer.get_source_address()
