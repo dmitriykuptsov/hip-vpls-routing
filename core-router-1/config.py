@@ -34,7 +34,6 @@ config = {
     ],
     "interfaces": [
         {
-            "name": "r2-tun1",
             "address": "192.168.1.2",
             "mask": "255.255.255.0",
             "destination": "1.1.1.1",
@@ -42,7 +41,6 @@ config = {
             "auth": True
         },
         {
-            "name": "r2-tun2",
             "address": "192.168.2.2",
             "mask": "255.255.255.0",
             "destination": "1.1.1.3",
@@ -50,7 +48,6 @@ config = {
             "auth": False
         },
         {
-            "name": "r2-tun3",
             "address": "192.168.3.2",
             "mask": "255.255.255.0",
             "destination": "1.1.1.4",
@@ -58,7 +55,6 @@ config = {
             "auth": False
         },
         {
-            "name": "r2-tun4",
             "address": "192.168.4.2",
             "mask": "255.255.255.0",
             "destination": "1.1.1.4",

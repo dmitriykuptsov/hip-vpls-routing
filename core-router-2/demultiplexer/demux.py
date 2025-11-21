@@ -99,13 +99,15 @@ class Demultiplexer():
                     inner = IPv4.IPv4Packet(outer.get_payload()[GRE.GRE_HEADER_LENGTH:])
                 source = inner.get_source_address()
                 destination = inner.get_destination_address()
+                logging.debug("LOOKING FOR THE ADDRESS %s" % (destination))
                 network = Misc.ipv4_address_to_int(Misc.bytes_to_ipv4_string(destination)) & Misc.ipv4_address_to_int("255.255.255.0")
                 
                 # Search the routing table entry....
                 try:
                     (outer_destination, auth) = self.routing_table[Misc.bytes_to_ipv4_string(Misc.int_to_ipv4_address(network))]
                 except:
-                    continue            
+                    continue
+
                 outer = IPv4.IPv4Packet()
                 outer.set_source_address(Misc.ipv4_address_to_bytes(self.own_ip))
                 outer.set_destination_address(Misc.ipv4_address_to_bytes(outer_destination))
