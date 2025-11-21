@@ -51,13 +51,18 @@ class Demultiplexer():
         socket_private = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.IPPROTO_IP)
         socket_private.bind((private_interface, 0x0800))
 
-        socket_raw = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_RAW)
-        socket_raw.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1);
+        socket_raw_public = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_RAW)
+        socket_raw_public.bind((public_ip, 0))
+        socket_raw_public.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1);
 
-        thread = threading.Thread(target=self.read_from_public, args=(socket_public, socket_raw, public_ip, ), daemon=True)
+        socket_raw_private = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_RAW)
+        socket_raw_private.bind((private_ip, 0))
+        socket_raw_private.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1);
+
+        thread = threading.Thread(target=self.read_from_public, args=(socket_public, socket_raw_private, public_ip, ), daemon=True)
         thread.start()
 
-        thread = threading.Thread(target=self.read_from_private, args=(socket_raw, socket_private, public_ip, hub_ip), daemon=True)
+        thread = threading.Thread(target=self.read_from_private, args=(socket_raw_public, socket_private, public_ip, hub_ip), daemon=True)
         thread.start()
     
 
@@ -142,11 +147,12 @@ class Demultiplexer():
                         logger.critical("No key was found...")
                         continue
                     sha256 = SHA256HMAC(self.key[1])
-                    icv = sha256.digest(buf)
+                    icv = sha256.digest(data)
                     gre.set_flags(1)
                     payload = gre.get_buffer() + data
                     outer.set_payload(payload + icv)
                     outer.set_total_length(len(bytearray(outer.get_buffer())))
+                    logging.debug("OUTER PACKET........ %s" % list(outer.get_buffer()))
                     pubfd.sendto(outer.get_buffer(), (hub_ip, 0))
 
                     logging.debug("Sending from private network to public one")
@@ -160,7 +166,6 @@ class Demultiplexer():
                     outer.set_payload(payload)
                     pubfd.sendto(outer.get_buffer(), (hub_ip, 0))
             except Exception as e:
-                logging.debug("read from private")
                 logging.critical(traceback.format_exc())
                 logging.critical(e)
 
