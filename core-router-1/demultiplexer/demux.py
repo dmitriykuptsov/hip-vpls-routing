@@ -128,12 +128,14 @@ class Demultiplexer():
                     outer.set_payload(payload + icv)
                     outer.set_total_length(len(bytearray(outer.get_buffer())))
                     socket_write.sendto(outer.get_buffer(), (outer_destination, 0))
+                    logging.debug("+++++++++==============+++++++++++++++ (AH) %s" % outer_destination)
                 else:
                     gre.set_flags(0)
                     data = inner.get_buffer()
                     payload = gre.get_buffer() + data
                     outer.set_payload(payload)
                     outer.set_total_length(len(bytearray(outer.get_buffer())))
+                    logging.debug("+++++++++==============+++++++++++++++ (no AH) %s" % outer_destination)
                     socket_write.sendto(outer.get_buffer(), (outer_destination, 0))
 
             except Exception as e:
