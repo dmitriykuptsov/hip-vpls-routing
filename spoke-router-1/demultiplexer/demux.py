@@ -83,7 +83,10 @@ class Demultiplexer():
 
                 if Misc.bytes_to_ipv4_string(destination) != public_ip:
                     continue
+
                 gre = GRE.GREPacket(outer.get_payload()[:GRE.GRE_HEADER_LENGTH])
+                logging.debug(list(outer.get_payload()))
+                logging.debug("________-----________")
                 if gre.get_flags() == 0x1:
                     buf = outer.get_payload()
                     icv = buf[-SHA256_HMAC_LENGTH:]
@@ -103,6 +106,10 @@ class Demultiplexer():
                     logging.debug("-------------------------")
                 else:
                     inner = IPv4.IPv4Packet(outer.get_payload()[GRE.GRE_HEADER_LENGTH:])
+
+                    logging.debug("-------------------------")
+                    logging.debug(Misc.bytes_to_ipv4_string(inner.get_destination_address()))
+                    logging.debug("-------------------------")
                 
                 destination = Misc.bytes_to_ipv4_string(inner.get_destination_address())
 
