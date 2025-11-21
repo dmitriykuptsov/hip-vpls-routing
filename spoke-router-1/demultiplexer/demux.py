@@ -103,7 +103,7 @@ class Demultiplexer():
                     inner = IPv4.IPv4Packet(outer.get_payload()[GRE.GRE_HEADER_LENGTH:])
                 
                 destination = inner.get_destination_address()
-                privfd.send(inner.get_buffer(), (destination, 0))
+                privfd.sendto(inner.get_buffer(), (destination, 0))
             except Exception as e:
                 logging.critical(traceback.format_exc())
                 logging.critical(e)
