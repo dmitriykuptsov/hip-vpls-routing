@@ -44,4 +44,4 @@ class GREPacket():
     def set_flags(self, flags):
         self.buffer[FLAGS_OFFSET] = flags << 3;
     def get_buffer(self):
-        return self.buffer;
+        return self.buffer[:GRE_HEADER_LENGTH];

@@ -142,7 +142,7 @@ class Demultiplexer():
                         logger.critical("No key was found...")
                         continue
                     sha256 = SHA256HMAC(self.key[1])
-                    icv = sha256.digest(buf)
+                    icv = sha256.digest(data)
                     gre.set_flags(1)
                     payload = gre.get_buffer() + data
                     outer.set_payload(payload + icv)
