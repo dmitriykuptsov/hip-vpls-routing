@@ -43,24 +43,20 @@ ETHER_HEADER_LENGTH = 14
 class Demultiplexer():
 
     def __init__(self, public_ip, private_ip, hub_ip, public_interface, private_interface, auth=False):
-        self.public_ip = public_ip
-        self.private_ip = private_ip
-        self.hub_ip = hub_ip
-        self.auth = auth
-        self.key = None
 
-        tunif = tun.Tun(address=private_ip, mtu=1500, name=private_interface);
-        self.socket_public = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.IPPROTO_IP)
-        self.socket_public.bind((public_interface, 0x0800))
+        socket_public = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.IPPROTO_IP)
+        socket_public.bind((public_interface, 0x0800))
 
-        self.socket_raw = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_RAW)
-        self.socket_raw.bind((public_ip, 0))
-        self.socket_raw.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1);
+        socket_private = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.IPPROTO_IP)
+        socket_private.bind((private_interface, 0x0800))
 
-        thread = threading.Thread(target=self.read_from_public, args=(self.socket_public, tunif, self.private_ip, ), daemon=True)
+        socket_raw = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_RAW)
+        socket_raw.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1);
+
+        thread = threading.Thread(target=self.read_from_public, args=(socket_public, socket_raw, ), daemon=True)
         thread.start()
 
-        thread = threading.Thread(target=self.read_from_private, args=(self.socket_raw, tunif, self.public_ip, self.hub_ip), daemon=True)
+        thread = threading.Thread(target=self.read_from_private, args=(socket_raw, socket_private, public_ip, hub_ip), daemon=True)
         thread.start()
     
 
@@ -70,7 +66,7 @@ class Demultiplexer():
     def clear_key(self):
         self.key = None
 
-    def read_from_public(self, pubfd, privfd, private_ip, mtu=1500):
+    def read_from_public(self, pubfd, privfd, mtu=1500):
         while True:
             try:
                 buf = pubfd.recv(mtu)
@@ -87,7 +83,7 @@ class Demultiplexer():
                 if Misc.bytes_to_ipv4_string(destination) != self.public_ip:
                     continue
                 gre = GRE.GREPacket(outer.get_payload()[:GRE.GRE_HEADER_LENGTH])
-                if self.auth and gre.get_flags() == 0x1:
+                if gre.get_flags() == 0x1:
                     buf = outer.get_payload()
                     icv = buf[-SHA256_HMAC_LENGTH:]
                     buf = buf[GRE.GRE_HEADER_LENGTH:-SHA256_HMAC_LENGTH]
@@ -95,29 +91,19 @@ class Demultiplexer():
                     if not self.key:
                         logger.critical("No key was found read_from_public... %s " % Misc.bytes_to_ipv4_string(source))
                         continue
-
-                    #iv = buf[:AES256_BLOCK_SIZE]
-                    #data = buf[AES256_BLOCK_SIZE:]
-                    #aes = AES256CBCCipher()
-
-                    #payload = aes.decrypt(self.key[0], iv, data)
                     payload = buf
                     sha256 = SHA256HMAC(self.key[1])
                     hmac = sha256.digest(payload)
-                    
                     if icv != hmac:
                         logger.critical("Invalid ICV... %s " % hexlify(self.key[0]))
                         continue
                     inner = IPv4.IPv4Packet(payload)
                 else:
                     inner = IPv4.IPv4Packet(outer.get_payload()[GRE.GRE_HEADER_LENGTH:])
-                logging.debug(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-                logging.debug(list(outer.get_payload()[GRE.GRE_HEADER_LENGTH:]))
-                logging.debug(list(outer.get_payload()[:]))
-                logging.debug("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
-                privfd.write(inner.get_buffer())
+                
+                destination = inner.get_destination_address()
+                privfd.send(inner.get_buffer(), (destination, 0))
             except Exception as e:
-                logging.debug("read from public")
                 logging.critical(traceback.format_exc())
                 logging.critical(e)
 
@@ -144,18 +130,10 @@ class Demultiplexer():
                         logger.critical("No key was found...")
                         continue
                     sha256 = SHA256HMAC(self.key[1])
-                    #logging.debug(list(self.key[0]))
-                    #logging.debug(list(self.key[1]))
                     icv = sha256.digest(buf)
-                    #iv = urandom(AES256_BLOCK_SIZE)
-                    #data = buf
-                    #aes = AES256CBCCipher()
-                    #payload = iv + aes.encrypt(self.key[0], iv, data)
                     gre.set_flags(1)
                     payload = gre.get_buffer() + data
                     outer.set_payload(payload + icv)
-                    #logging.debug("read_from_private")
-                    #logging.debug(list(payload + icv))
                     outer.set_total_length(len(bytearray(outer.get_buffer())))
                     pubfd.sendto(outer.get_buffer(), (hub_ip, 0))
                 else:

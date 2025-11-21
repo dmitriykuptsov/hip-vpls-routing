@@ -76,12 +76,16 @@ def run():
     net = Mininet(topo=topo, switch=OVSKernelSwitch, controller = OVSController)
     net.start()
     info( net[ 'r1' ].cmd( 'ifconfig r1-eth1 1.1.1.1 netmask 255.255.255.240' ) )
+    info( net[ 'r1' ].cmd( 'ifconfig r1-eth2 192.168.1.1 netmask 255.255.255.240' ) )
     info( net[ 'r2' ].cmd( 'ifconfig r2-eth1 1.1.1.2 netmask 255.255.255.240' ) )
     info( net[ 'r3' ].cmd( 'ifconfig r3-eth1 1.1.1.3 netmask 255.255.255.240' ) )
     info( net[ 'r4' ].cmd( 'ifconfig r4-eth1 1.1.1.4 netmask 255.255.255.240' ) )
     info( net[ 'r5' ].cmd( 'ifconfig r5-eth1 1.1.1.5 netmask 255.255.255.240' ) )
+    info( net[ 'r5' ].cmd( 'ifconfig r5-eth2 192.168.2.1 netmask 255.255.255.0' ) )
     info( net[ 'r6' ].cmd( 'ifconfig r6-eth1 1.1.1.6 netmask 255.255.255.240' ) )
+    info( net[ 'r5' ].cmd( 'ifconfig r5-eth2 192.168.3.1 netmask 255.255.255.0' ) )
     info( net[ 'r7' ].cmd( 'ifconfig r7-eth1 1.1.1.7 netmask 255.255.255.240' ) )
+    info( net[ 'r5' ].cmd( 'ifconfig r5-eth2 192.168.4.1 netmask 255.255.255.0' ) )
 
     info( net[ 'r1' ].cmd( '/sbin/ethtool -K r1-eth1 rx off tx off sg off' ) )
     info( net[ 'r1' ].cmd( '/sbin/ethtool -K r1-eth0 rx off tx off sg off' ) )
@@ -127,16 +131,6 @@ def run():
 
     sleep(10)
     info( net[ 'r2' ].cmd( 'ip addr' ) )
-    
-    info( net[ 'r5' ].cmd( 'ip route add default dev r5-tun1' ) )
-    info( net[ 'r1' ].cmd( 'ip route add default dev r1-tun1' ) )
-    info( net[ 'r6' ].cmd( 'ip route add default dev r6-tun1' ) )
-    info( net[ 'r7' ].cmd( 'ip route add default dev r7-tun1' ) )
-
-    info( net[ 'r5' ].cmd( 'echo "1" > /proc/sys/net/ipv4/icmp_echo_ignore_all') )
-    info( net[ 'r1' ].cmd( 'echo "1" > /proc/sys/net/ipv4/icmp_echo_ignore_all') )
-    info( net[ 'r6' ].cmd( 'echo "1" > /proc/sys/net/ipv4/icmp_echo_ignore_all') )
-    info( net[ 'r7' ].cmd( 'echo "1" > /proc/sys/net/ipv4/icmp_echo_ignore_all') )
     
     CLI( net )
     net.stop()
