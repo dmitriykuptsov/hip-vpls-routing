@@ -73,6 +73,8 @@ class Demultiplexer():
         while True:
             try:
                 buf = sock_read.recv(mtu)
+                logging.debug("))))))))(((((((((())))))))))")
+                logging.debug(list(buf))
                 outer = IPv4.IPv4Packet(bytearray(buf[ETHER_HEADER_LENGTH:]))
 
                 source = outer.get_source_address()
