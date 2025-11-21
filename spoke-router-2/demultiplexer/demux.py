@@ -44,7 +44,7 @@ class Demultiplexer():
 
     def __init__(self, public_ip, private_ip, hub_ip, public_interface, private_interface, auth=False):
         self.auth = auth
-        
+
         socket_public = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.IPPROTO_IP)
         socket_public.bind((public_interface, 0x0800))
 
@@ -54,7 +54,7 @@ class Demultiplexer():
         socket_raw = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_RAW)
         socket_raw.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1);
 
-        thread = threading.Thread(target=self.read_from_public, args=(socket_public, socket_raw, ), daemon=True)
+        thread = threading.Thread(target=self.read_from_public, args=(socket_public, socket_raw, public_ip, ), daemon=True)
         thread.start()
 
         thread = threading.Thread(target=self.read_from_private, args=(socket_raw, socket_private, public_ip, hub_ip), daemon=True)
@@ -81,7 +81,7 @@ class Demultiplexer():
                 logging.debug("Source %s" % Misc.bytes_to_ipv4_string(source))
                 logging.debug("Destination %s" % Misc.bytes_to_ipv4_string(destination))
 
-                if Misc.bytes_to_ipv4_string(destination) != self.public_ip:
+                if Misc.bytes_to_ipv4_string(destination) != public_ip:
                     continue
                 gre = GRE.GREPacket(outer.get_payload()[:GRE.GRE_HEADER_LENGTH])
                 if gre.get_flags() == 0x1:
