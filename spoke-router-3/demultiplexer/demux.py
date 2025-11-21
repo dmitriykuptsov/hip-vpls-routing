@@ -92,17 +92,20 @@ class Demultiplexer():
                     if not self.key:
                         logger.critical("No key was found read_from_public... %s " % Misc.bytes_to_ipv4_string(source))
                         continue
-                    payload = buf
                     sha256 = SHA256HMAC(self.key[1])
-                    hmac = sha256.digest(payload)
+                    hmac = sha256.digest(buf)
                     if icv != hmac:
                         logger.critical("Invalid ICV... %s " % hexlify(self.key[0]))
                         continue
-                    inner = IPv4.IPv4Packet(payload)
+                    inner = IPv4.IPv4Packet(buf)
+                    logging.debug("-------------------------")
+                    logging.debug(Misc.bytes_to_ipv4_string(inner.get_destination_address()))
+                    logging.debug("-------------------------")
                 else:
                     inner = IPv4.IPv4Packet(outer.get_payload()[GRE.GRE_HEADER_LENGTH:])
                 
                 destination = Misc.bytes_to_ipv4_string(inner.get_destination_address())
+
                 privfd.sendto(inner.get_buffer(), (destination, 0))
             except Exception as e:
                 logging.critical(traceback.format_exc())
