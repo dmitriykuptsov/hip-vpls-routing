@@ -67,7 +67,7 @@ class Demultiplexer():
     def clear_key(self):
         self.key = None
 
-    def read_from_public(self, pubfd, privfd, mtu=1500):
+    def read_from_public(self, pubfd, privfd, public_ip, mtu=1500):
         while True:
             try:
                 buf = pubfd.recv(mtu)
