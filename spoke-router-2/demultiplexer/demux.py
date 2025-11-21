@@ -43,7 +43,8 @@ ETHER_HEADER_LENGTH = 14
 class Demultiplexer():
 
     def __init__(self, public_ip, private_ip, hub_ip, public_interface, private_interface, auth=False):
-
+        self.auth = auth
+        
         socket_public = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.IPPROTO_IP)
         socket_public.bind((public_interface, 0x0800))
 
