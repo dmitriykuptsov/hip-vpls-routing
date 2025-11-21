@@ -115,7 +115,8 @@ class Demultiplexer():
         while True:
             try:
                 buf = privfd.recv(mtu)
-                inner = IPv4.IPv4Packet(buf)
+                logging.debug("------------ GOT PRIVATE DATA --------------")
+                inner = IPv4.IPv4Packet(bytearray(buf[ETHER_HEADER_LENGTH:]))
                 outer = IPv4.IPv4Packet()
                 outer.set_destination_address(Misc.ipv4_address_to_bytes(hub_ip))
                 outer.set_source_address(Misc.ipv4_address_to_bytes(public_ip))
