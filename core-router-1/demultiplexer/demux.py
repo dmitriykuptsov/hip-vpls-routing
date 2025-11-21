@@ -99,7 +99,7 @@ class Demultiplexer():
                     inner = IPv4.IPv4Packet(outer.get_payload()[GRE.GRE_HEADER_LENGTH:])
                 source = inner.get_source_address()
                 destination = inner.get_destination_address()
-                logging.debug("LOOKING FOR THE ADDRESS %s" % (destination))
+                logging.debug("LOOKING FOR THE ADDRESS %s" % (Misc.bytes_to_ipv4_string(destination)))
                 network = Misc.ipv4_address_to_int(Misc.bytes_to_ipv4_string(destination)) & Misc.ipv4_address_to_int("255.255.255.0")
                 
                 # Search the routing table entry....
