@@ -140,6 +140,12 @@ class Demultiplexer():
                     outer.set_payload(payload + icv)
                     outer.set_total_length(len(bytearray(outer.get_buffer())))
                     pubfd.sendto(outer.get_buffer(), (hub_ip, 0))
+
+                    logging.debug("Sending from private network to public one")
+                    logging.debug("-------------------------")
+                    logging.debug(Misc.bytes_to_ipv4_string(outer.get_destination_address()))
+                    logging.debug(Misc.bytes_to_ipv4_string(inner.get_destination_address()))
+                    logging.debug("-------------------------")
                 else:
                     gre.set_flags(0)
                     payload = gre.get_buffer() + data
