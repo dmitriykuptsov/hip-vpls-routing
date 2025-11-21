@@ -73,8 +73,7 @@ def closed_callback(ihit, rhit, src, dst):
 cs = crypto_server.CryptoServer(completed_callback, closed_callback)
 demux = Demultiplexer(config["interfaces"], 
                       config["own_ip"], 
-                      config["own_interface"], 
-                      auth=config["enable_auth"])
+                      config["own_interface"])
 
 for peer in config["hip"]:
     cs.trigger_bex(Utils.hex_formatted_to_ipv6_bytes(peer["ihit"]), 

@@ -47,7 +47,6 @@ class Demultiplexer():
         self.keys = {}
         self.auth= auth
         self.own_ip = own_ip
-        self.tuns = []
         
         self.socket_in = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.IPPROTO_IP)
         self.socket_in.bind((own_interface, 0x0800))

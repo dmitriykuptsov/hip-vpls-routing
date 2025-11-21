@@ -18,12 +18,6 @@
 config = {
     "own_ip": "1.1.1.2",
     "own_interface": "r2-eth1",
-    "enable_auth": True,
-    "routes": {
-        "192.168.1.0/24": "r2-tun1",
-        "192.168.2.0/24": "r2-tun2",
-        "192.168.3.0/24": "r2-tun3"
-    },
     "hip": [
         {
             "src": "1.1.1.2",
@@ -34,28 +28,28 @@ config = {
     ],
     "interfaces": [
         {
-            "address": "192.168.1.2",
+            "address": "192.168.1.0",
             "mask": "255.255.255.0",
             "destination": "1.1.1.1",
             "mtu": 1400,
             "auth": True
         },
         {
-            "address": "192.168.2.2",
+            "address": "192.168.2.0",
             "mask": "255.255.255.0",
             "destination": "1.1.1.3",
             "mtu": 1400,
             "auth": False
         },
         {
-            "address": "192.168.3.2",
+            "address": "192.168.3.0",
             "mask": "255.255.255.0",
             "destination": "1.1.1.4",
             "mtu": 1400,
             "auth": False
         },
         {
-            "address": "192.168.4.2",
+            "address": "192.168.4.0",
             "mask": "255.255.255.0",
             "destination": "1.1.1.4",
             "mtu": 1400,
