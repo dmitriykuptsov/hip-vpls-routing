@@ -77,6 +77,10 @@ class Demultiplexer():
 
                 source = outer.get_source_address()
                 destination = outer.get_destination_address()
+
+                logging.debug("OUTER SOURCE %s" % (Misc.bytes_to_ipv4_string(source)))
+                logging.debug("OUTER DESTINATION %s" % (Misc.bytes_to_ipv4_string(destination)))
+                
                 gre = GRE.GREPacket(outer.get_payload()[:GRE.GRE_HEADER_LENGTH])
 
                 if Misc.bytes_to_ipv4_string(destination) != self.own_ip:
