@@ -72,15 +72,11 @@ class Demultiplexer():
         while True:
             try:
                 buf = sock_read.recv(mtu)
-                logging.debug("++++++++++++")
                 outer = IPv4.IPv4Packet(bytearray(buf[ETHER_HEADER_LENGTH:]))
 
                 source = outer.get_source_address()
                 destination = outer.get_destination_address()
 
-                logging.debug("OUTER SOURCE %s" % (Misc.bytes_to_ipv4_string(source)))
-                logging.debug("OUTER DESTINATION %s" % (Misc.bytes_to_ipv4_string(destination)))
-                logging.debug(list(outer.get_buffer()))
                 gre = GRE.GREPacket(outer.get_payload()[:GRE.GRE_HEADER_LENGTH])
 
                 if Misc.bytes_to_ipv4_string(destination) != self.own_ip:
@@ -105,7 +101,6 @@ class Demultiplexer():
                     inner = IPv4.IPv4Packet(outer.get_payload()[GRE.GRE_HEADER_LENGTH:])
                 source = inner.get_source_address()
                 destination = inner.get_destination_address()
-                logging.debug("LOOKING FOR THE ADDRESS %s" % (Misc.bytes_to_ipv4_string(destination)))
                 network = Misc.ipv4_address_to_int(Misc.bytes_to_ipv4_string(destination)) & Misc.ipv4_address_to_int("255.255.255.0")
                 
                 # Search the routing table entry....
@@ -136,14 +131,12 @@ class Demultiplexer():
                     outer.set_payload(payload + icv)
                     outer.set_total_length(len(bytearray(outer.get_buffer())))
                     socket_write.sendto(outer.get_buffer(), (outer_destination, 0))
-                    logging.debug("+++++++++==============+++++++++++++++ (AH) %s" % outer_destination)
                 else:
                     gre.set_flags(0)
                     data = inner.get_buffer()
                     payload = gre.get_buffer() + data
                     outer.set_payload(payload)
                     outer.set_total_length(len(bytearray(outer.get_buffer())))
-                    logging.debug("+++++++++==============+++++++++++++++ (no AH) %s" % outer_destination)
                     socket_write.sendto(outer.get_buffer(), (outer_destination, 0))
 
             except Exception as e:

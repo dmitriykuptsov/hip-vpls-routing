@@ -76,22 +76,12 @@ class Demultiplexer():
         while True:
             try:
                 buf = pubfd.recv(mtu)
-                logging.debug("read_from_public")
-                logging.debug(list(buf))
                 outer = IPv4.IPv4Packet(bytearray(buf[ETHER_HEADER_LENGTH:]))
-
                 source = outer.get_source_address()
                 destination = outer.get_destination_address()
-
-                logging.debug("Source %s" % Misc.bytes_to_ipv4_string(source))
-                logging.debug("Destination %s" % Misc.bytes_to_ipv4_string(destination))
-
                 if Misc.bytes_to_ipv4_string(destination) != public_ip:
                     continue
-
                 gre = GRE.GREPacket(outer.get_payload()[:GRE.GRE_HEADER_LENGTH])
-                logging.debug(list(outer.get_payload()))
-                logging.debug("________-----________")
                 if gre.get_flags() == 0x1:
                     buf = outer.get_payload()
                     icv = buf[-SHA256_HMAC_LENGTH:]
@@ -106,15 +96,8 @@ class Demultiplexer():
                         logger.critical("Invalid ICV... %s " % hexlify(self.key[0]))
                         continue
                     inner = IPv4.IPv4Packet(buf)
-                    logging.debug("-------------------------")
-                    logging.debug(Misc.bytes_to_ipv4_string(inner.get_destination_address()))
-                    logging.debug("-------------------------")
                 else:
                     inner = IPv4.IPv4Packet(outer.get_payload()[GRE.GRE_HEADER_LENGTH:])
-
-                    logging.debug("-------------------------")
-                    logging.debug(Misc.bytes_to_ipv4_string(inner.get_destination_address()))
-                    logging.debug("-------------------------")
                 
                 destination = Misc.bytes_to_ipv4_string(inner.get_destination_address())
 
@@ -127,7 +110,6 @@ class Demultiplexer():
         while True:
             try:
                 buf = privfd.recv(mtu)
-                logging.debug("------------ GOT PRIVATE DATA --------------")
                 inner = IPv4.IPv4Packet(bytearray(buf[ETHER_HEADER_LENGTH:]))
                 outer = IPv4.IPv4Packet()
                 outer.set_destination_address(Misc.ipv4_address_to_bytes(hub_ip))
@@ -150,14 +132,7 @@ class Demultiplexer():
                     payload = gre.get_buffer() + inner.get_buffer()
                     outer.set_payload(payload + icv)
                     outer.set_total_length(len(bytearray(outer.get_buffer())))
-                    logging.debug("OUTER PACKET........ %s" % list(outer.get_buffer()))
                     pubfd.sendto(outer.get_buffer(), (hub_ip, 0))
-
-                    logging.debug("Sending from private network to public one")
-                    logging.debug("-------------------------")
-                    logging.debug(Misc.bytes_to_ipv4_string(outer.get_destination_address()))
-                    logging.debug(Misc.bytes_to_ipv4_string(inner.get_destination_address()))
-                    logging.debug("-------------------------")
                 else:
                     gre.set_flags(0)
                     payload = gre.get_buffer() + inner.get_buffer()
