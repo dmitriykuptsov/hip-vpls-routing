@@ -53,8 +53,8 @@ class Demultiplexer():
         #self.socket_in.bind((own_interface, 0x0800))
         self.socket_out = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_RAW)
         self.socket_out.bind((own_ip, 0))
-
         self.socket_out.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1);
+
         for interface in self.interfaces:
             network = Misc.ipv4_address_to_int(interface["address"]) & Misc.ipv4_address_to_int(interface["mask"])
             self.routing_table[Misc.bytes_to_ipv4_string(Misc.int_to_ipv4_address(network))] = (interface["destination"], interface["auth"]);
@@ -72,7 +72,9 @@ class Demultiplexer():
     def read(self, sock_read, socket_write, mtu = 1500):
         while True:
             try:
+                logging.debug("GOT DATA ON RAW SOCKET....")
                 buf = sock_read.recv(mtu)
+                logging.debug(list(buf))
                 #outer = IPv4.IPv4Packet(bytearray(buf[ETHER_HEADER_LENGTH:]))
 
                 outer = IPv4.IPv4Packet(bytearray(buf))
