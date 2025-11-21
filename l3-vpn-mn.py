@@ -131,6 +131,14 @@ def run():
     info( '*** Running L3-VPN on router 7 *** \n')
     info( net[ 'r7' ].cmd( 'cd spoke-router-4 && python3 router.py  > /dev/null&' ) )
 
+    info( net[ 'r1' ].cmd( 'sysctl -w net.ipv4.icmp_msgs_per_sec=0' ))
+    info( net[ 'r2' ].cmd( 'sysctl -w net.ipv4.icmp_msgs_per_sec=0' ))
+    info( net[ 'r3' ].cmd( 'sysctl -w net.ipv4.icmp_msgs_per_sec=0' ))
+    info( net[ 'r4' ].cmd( 'sysctl -w net.ipv4.icmp_msgs_per_sec=0' ))
+    info( net[ 'r5' ].cmd( 'sysctl -w net.ipv4.icmp_msgs_per_sec=0' ))
+    info( net[ 'r6' ].cmd( 'sysctl -w net.ipv4.icmp_msgs_per_sec=0' ))
+    info( net[ 'r7' ].cmd( 'sysctl -w net.ipv4.icmp_msgs_per_sec=0' ))
+
     sleep(10)
     info( net[ 'r2' ].cmd( 'ip addr' ) )
     
