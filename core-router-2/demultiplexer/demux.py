@@ -58,7 +58,7 @@ class Demultiplexer():
             network = Misc.ipv4_address_to_int(interface["address"]) & Misc.ipv4_address_to_int(interface["mask"])
             self.routing_table[Misc.bytes_to_ipv4_string(Misc.int_to_ipv4_address(network))] = (interface["destination"], interface["auth"]);
 
-        thread = threading.Thread(target=self.read, args=(self.socket_out, self.socket_out), daemon=True)
+        thread = threading.Thread(target=self.read, args=(self.socket_in, self.socket_out), daemon=True)
         thread.start()
 
     def set_key(self, src, dst, key):
