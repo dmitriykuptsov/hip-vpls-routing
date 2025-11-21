@@ -49,8 +49,8 @@ class Demultiplexer():
         self.own_ip = own_ip
         self.tuns = []
         
-        self.socket_in = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.IPPROTO_IP)
-        self.socket_in.bind((own_interface, 0x0800))
+        #self.socket_in = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.IPPROTO_IP)
+        #self.socket_in.bind((own_interface, 0x0800))
         self.socket_out = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_RAW)
         self.socket_out.bind((own_ip, 0))
 
@@ -59,7 +59,7 @@ class Demultiplexer():
             network = Misc.ipv4_address_to_int(interface["address"]) & Misc.ipv4_address_to_int(interface["mask"])
             self.routing_table[Misc.bytes_to_ipv4_string(Misc.int_to_ipv4_address(network))] = (interface["destination"], interface["auth"]);
 
-        thread = threading.Thread(target=self.read, args=(self.socket_in, self.socket_out), daemon=True)
+        thread = threading.Thread(target=self.read, args=(self.socket_out, self.socket_out), daemon=True)
         thread.start()
 
     def set_key(self, src, dst, key):
@@ -73,7 +73,9 @@ class Demultiplexer():
         while True:
             try:
                 buf = sock_read.recv(mtu)
-                outer = IPv4.IPv4Packet(bytearray(buf[ETHER_HEADER_LENGTH:]))
+                #outer = IPv4.IPv4Packet(bytearray(buf[ETHER_HEADER_LENGTH:]))
+
+                outer = IPv4.IPv4Packet(bytearray(buf))
 
                 source = outer.get_source_address()
                 destination = outer.get_destination_address()
@@ -103,7 +105,7 @@ class Demultiplexer():
                 
                 # Search the routing table entry....
                 (outer_destination, auth) = self.routing_table[Misc.bytes_to_ipv4_string(Misc.int_to_ipv4_address(network))]
-                
+
                 outer = IPv4.IPv4Packet()
                 outer.set_source_address(Misc.ipv4_address_to_bytes(self.own_ip))
                 outer.set_destination_address(Misc.ipv4_address_to_bytes(outer_destination))
