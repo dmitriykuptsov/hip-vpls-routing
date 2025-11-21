@@ -20,7 +20,7 @@ config = {
     "private_ip": "192.168.4.1",
     "hub_ip": "1.1.1.4",
     "public_interface": "r7-eth1",
-    "private_interface": "r7-eth2",
+    "private_interface": "r7-eth0",
     "enable_auth": True,
     "ihit": "2001:0021:032b:595c:cee0:1b09:20ea:0ead",
     "rhit": "2001:0021:7e43:e8e2:afd2:69fa:833c:cb1f"
