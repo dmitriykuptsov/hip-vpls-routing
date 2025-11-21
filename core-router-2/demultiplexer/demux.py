@@ -85,6 +85,8 @@ class Demultiplexer():
 
                 if Misc.bytes_to_ipv4_string(destination) != self.own_ip:
                     continue
+                logging.debug(list(outer.get_payload()[:GRE.GRE_HEADER_LENGTH]))
+                logging.debug(list(outer.get_payload()[GRE.GRE_HEADER_LENGTH:]))
                 if gre.get_flags() == 0x1:
                     buf = outer.get_payload()[GRE.GRE_HEADER_LENGTH:]
                     icv = buf[-SHA256_HMAC_LENGTH:]
