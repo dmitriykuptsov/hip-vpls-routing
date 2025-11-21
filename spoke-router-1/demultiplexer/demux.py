@@ -110,7 +110,7 @@ class Demultiplexer():
     def read_from_private(self, pubfd, privfd, public_ip, hub_ip, mtu=1500):
         while True:
             try:
-                buf = privfd.read(mtu)
+                buf = privfd.recv(mtu)
                 inner = IPv4.IPv4Packet(buf)
                 outer = IPv4.IPv4Packet()
                 outer.set_destination_address(Misc.ipv4_address_to_bytes(hub_ip))
