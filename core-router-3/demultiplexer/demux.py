@@ -43,24 +43,23 @@ class Demultiplexer():
 
     def __init__(self, interfaces, own_ip, own_interface, auth=True):
         self.interfaces = interfaces
-        self.demux_table = {}
+        self.routing_table = {}
         self.keys = {}
         self.auth= auth
         self.own_ip = own_ip
         self.tuns = []
-        self.socket = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.IPPROTO_IP)
-        self.socket.bind((own_interface, 0x0800))
-        self.socket_raw = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_RAW)
-        self.socket_raw.bind((own_ip, 0))
+        
+        self.socket_in = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.IPPROTO_IP)
+        self.socket_in.bind((own_interface, 0x0800))
+        self.socket_out = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_RAW)
+        self.socket_out.bind((own_ip, 0))
+
         self.socket_raw.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1);
         for interface in self.interfaces:
-            tunif = tun.Tun(address=interface["address"], mtu=interface["mtu"], name=interface["name"]);
             network = Misc.ipv4_address_to_int(interface["address"]) & Misc.ipv4_address_to_int(interface["mask"])
-            self.demux_table[Misc.bytes_to_ipv4_string(Misc.int_to_ipv4_address(network))] = tunif;
-            thread = threading.Thread(target=self.read_from_tun, args=(tunif, self.socket_raw, interface["destination"], interface["mtu"], interface["auth"]), daemon=True)
-            thread.start()
+            self.routing_table[Misc.bytes_to_ipv4_string(Misc.int_to_ipv4_address(network))] = (interface["destination"], interface["auth"]);
 
-        thread = threading.Thread(target=self.read_from_public, args=(self.socket, ), daemon=True)
+        thread = threading.Thread(target=self.read, args=(self.socket_in, self.socket_out), daemon=True)
         thread.start()
 
     def set_key(self, src, dst, key):
@@ -70,10 +69,10 @@ class Demultiplexer():
     def clear_key(self, src, dst):
         del self.keys[dst]
 
-    def read_from_public(self, sockfd, mtu = 1500):
+    def read(self, sock_read, socket_write, mtu = 1500):
         while True:
             try:
-                buf = sockfd.recv(mtu)
+                buf = sock_read.recv(mtu)
                 outer = IPv4.IPv4Packet(bytearray(buf[ETHER_HEADER_LENGTH:]))
 
                 source = outer.get_source_address()
@@ -82,11 +81,12 @@ class Demultiplexer():
 
                 if Misc.bytes_to_ipv4_string(destination) != self.own_ip:
                     continue
+
                 logging.debug("------------------------------------")
                 logging.debug(gre.get_flags())
                 logging.debug("------------------------------------")
                 logging.debug(list(gre.get_buffer()))
-                if self.auth and gre.get_flags() == 0x1:
+                if gre.get_flags() == 0x1:
                     buf = outer.get_payload()[GRE.GRE_HEADER_LENGTH:]
                     logging.debug("read_from_public")
                     logging.debug(list(buf))
@@ -100,22 +100,15 @@ class Demultiplexer():
                     if not key:
                         logger.critical("No key was found read_from_public... %s " % Misc.bytes_to_ipv4_string(source))
                         continue
-
-                    #iv = buf[:AES256_BLOCK_SIZE]
-                    #data = buf[AES256_BLOCK_SIZE:]
-                    #aes = AES256CBCCipher()
-                    logging.debug(len(buf))
-                    payload = buf #aes.decrypt(key[0], iv, data)
                     logging.debug(list(key[0]))
                     logging.debug(list(key[1]))
                     sha256 = SHA256HMAC(key[1])
-                    hmac = sha256.digest(payload)
-                    
+                    hmac = sha256.digest(buf)                    
                     if icv != hmac:
                         logger.critical("Invalid ICV... %s " % hexlify(key[1]))
                         continue
                     logging.debug("AH PACKET.........")
-                    inner = IPv4.IPv4Packet(payload)
+                    inner = IPv4.IPv4Packet(buf)
                 else:
                     logging.debug("PLAIN PACKET.........")
                     inner = IPv4.IPv4Packet(outer.get_payload()[GRE.GRE_HEADER_LENGTH:])
@@ -123,21 +116,10 @@ class Demultiplexer():
                 destination = inner.get_destination_address()
                 network = Misc.ipv4_address_to_int(Misc.bytes_to_ipv4_string(destination)) & Misc.ipv4_address_to_int("255.255.255.0")
                 logging.debug(Misc.int_to_ipv4_address(network))
-                tun = self.demux_table[Misc.bytes_to_ipv4_string(Misc.int_to_ipv4_address(network))]
-                tun.write(inner.get_buffer())
-            except Exception as e:
-                logging.debug(traceback.format_exc())
-                logging.debug(e)
-
-    
-    def read_from_tun(self, tunfd, sockfd, destination, mtu = 1500, auth=False):
-        while True:
-            try:
-                buf = tunfd.read(mtu);
-                inner = IPv4.IPv4Packet(bytearray(buf))
+                (outer_destination, auth) = self.demux_table[Misc.bytes_to_ipv4_string(Misc.int_to_ipv4_address(network))]
                 outer = IPv4.IPv4Packet()
                 outer.set_source_address(Misc.ipv4_address_to_bytes(self.own_ip))
-                outer.set_destination_address(Misc.ipv4_address_to_bytes(destination))
+                outer.set_destination_address(Misc.ipv4_address_to_bytes(outer_destination))
                 outer.set_protocol(GRE.GRE_PROTOCOL_NUMBER)
                 outer.set_version(4)
                 outer.set_ttl(128)
@@ -146,30 +128,24 @@ class Demultiplexer():
                 gre.set_protocol(0x0800)
                 logging.debug("PROTOCOL VERSION ...  %s" % (outer.get_protocol()))
                 if auth:
-                    key = self.keys.get(destination, None)
+                    key = self.keys.get(outer_destination, None)
                     if not key:
-                        logger.critical("No key was found... %s " % destination)
+                        logger.critical("No key was found... %s " % outer_destination)
                         continue
                     gre.set_flags(1)
-                    sha256 = SHA256HMAC(key[1])
-                    icv = sha256.digest(buf)
-                    #iv = urandom(AES256_BLOCK_SIZE)
                     data = inner.get_buffer()
-                    #aes = AES256CBCCipher()
-                    #payload = bytearray([0x1]) + iv + aes.encrypt(key[0], iv, data)
-                    
-                    
+                    sha256 = SHA256HMAC(key[1])
+                    icv = sha256.digest(data)
                     payload = gre.get_buffer() + data
                     logging.debug("read_from_tun")
                     outer.set_payload(payload + icv)
                     outer.set_total_length(len(bytearray(outer.get_buffer())))
-                    logging.debug("SENDING DATA + AH TO %s" % (destination, ))
+                    logging.debug("SENDING DATA + AH TO %s" % (outer_destination, ))
                     logging.debug(list(payload))
                     logging.debug(list(outer.get_buffer()))
                     logging.debug("Packet version")
                     logging.debug(outer.get_version())
-                    
-                    sockfd.sendto(outer.get_buffer(), (destination, 0))
+                    socket_write.sendto(outer.get_buffer(), (outer_destination, 0))
                 else:
                     gre.set_flags(0)
                     data = inner.get_buffer()
@@ -177,13 +153,13 @@ class Demultiplexer():
                     outer.set_payload(payload)
                     outer.set_total_length(len(bytearray(outer.get_buffer())))
                     logging.debug(list(payload))
-                    logging.debug("SENDING PLAIN DATA TO %s" % (destination, ))
+                    logging.debug("SENDING PLAIN DATA TO %s" % (outer_destination, ))
                     logging.debug("Packet version")
                     logging.debug(outer.get_version())
                     logging.debug("-----------------------------------")
                     logging.debug(list(outer.get_buffer()))
-                    sockfd.sendto(outer.get_buffer(), (destination, 0))
+                    socket_write.sendto(outer.get_buffer(), (outer_destination, 0))
+
             except Exception as e:
                 logging.debug(traceback.format_exc())
                 logging.debug(e)
-        
